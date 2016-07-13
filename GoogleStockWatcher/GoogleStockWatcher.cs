@@ -133,7 +133,8 @@ namespace GoogleStockWatcher
       catch (Exception ex)
       {
         eventLog.WriteEntry(string.Format("An error occured: {0}\n{1}", ex.Message, ex.StackTrace), EventLogEntryType.Error);
-        emailLogger.Log(ex.Message, string.Format("An error occured: {0}\n{1}", ex.Message, ex.StackTrace), EventLogEntryType.Error);
+        emailLogger.Log(ex.GetType().ToString(), 
+          string.Format("An error occured: {0}\n{1}", ex.Message, ex.StackTrace), EventLogEntryType.Error);
       }
     }
 

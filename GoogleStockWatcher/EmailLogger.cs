@@ -45,18 +45,27 @@ namespace GoogleStockWatcher
     {
       if (From == null || Subscribers == null || Subscribers.FirstOrDefault() == null) { return; }
 
-      var email = new MailMessage
+      MailMessage email;
+      try
       {
-        From = From,
-        Subject = string.Format("[{0}] {1}", type.ToString(), title),
-        SubjectEncoding = Encoding.UTF8,
-        Body = message,
-        BodyEncoding = Encoding.UTF8,
-        IsBodyHtml = false
-      };
-      foreach (var address in Subscribers)
+        email = new MailMessage
+        {
+          From = From,
+          Subject = string.Format("[{0}] {1}", type.ToString(), title),
+          SubjectEncoding = Encoding.UTF8,
+          Body = message,
+          BodyEncoding = Encoding.UTF8,
+          IsBodyHtml = false
+        };
+        foreach (var address in Subscribers)
+        {
+          email.To.Add(address);
+        }
+      }
+      catch (Exception ex)
       {
-        email.To.Add(address);
+        eventLog.WriteEntry(string.Format("An error occured sending an email: {0}\n{1}", ex.Message, ex.StackTrace), EventLogEntryType.Error);
+        return;
       }
 
 
