@@ -5,7 +5,7 @@ using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GoogleStockWatcher
+namespace StockWatch
 {
   static class Program
   {
@@ -15,7 +15,7 @@ namespace GoogleStockWatcher
     static void Main()
     {
       ServiceBase[] ServicesToRun;
-      ServicesToRun = new ServiceBase[] { new GoogleStockWatcher() };
+      ServicesToRun = new ServiceBase[] { new StockWatch() };
       ServiceBase.Run(ServicesToRun);
     }
   }

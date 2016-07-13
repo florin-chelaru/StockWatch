@@ -14,9 +14,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 
-namespace GoogleStockWatcher
+namespace StockWatch
 {
-  public partial class GoogleStockWatcher : ServiceBase
+  public partial class StockWatch : ServiceBase
   {
     [DllImport("advapi32.dll", SetLastError = true)]
     private static extern bool SetServiceStatus(IntPtr handle, ref ServiceStatus serviceStatus);
@@ -26,17 +26,17 @@ namespace GoogleStockWatcher
 
     Timer timer;
 
-    public GoogleStockWatcher()
+    public StockWatch()
     {
       InitializeComponent();
 
       eventLog = new EventLog();
-      if (!EventLog.SourceExists("GoogleStockWatcherSource"))
+      if (!EventLog.SourceExists("StockWatchSource"))
       {
-        EventLog.CreateEventSource("GoogleStockWatcherSource", "GoogleStockWatcherLog");
+        EventLog.CreateEventSource("StockWatchSource", "StockWatchLog");
       }
-      eventLog.Source = "GoogleStockWatcherSource";
-      eventLog.Log = "GoogleStockWatcherLog";
+      eventLog.Source = "StockWatchSource";
+      eventLog.Log = "StockWatchLog";
 
       emailLogger = new EmailLogger(eventLog,
         // new MailAddress("florin.chelaru@gmail.com", "Florin Chelaru"),

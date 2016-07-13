@@ -1,4 +1,4 @@
-﻿namespace GoogleStockWatcher
+﻿namespace StockWatch
 {
   partial class ProjectInstaller
   {
@@ -39,9 +39,9 @@
       // 
       // serviceInstaller
       // 
-      this.serviceInstaller.Description = "Watcher for Google Finance Stocks";
-      this.serviceInstaller.DisplayName = "Google Stock Watcher";
-      this.serviceInstaller.ServiceName = "GoogleStockWatcher";
+      this.serviceInstaller.Description = "Watcher for Stock Market Prices";
+      this.serviceInstaller.DisplayName = "Stock Watch";
+      this.serviceInstaller.ServiceName = "StockWatch";
       this.serviceInstaller.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
       // 
       // ProjectInstaller

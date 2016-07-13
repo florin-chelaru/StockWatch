@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("GoogleStockWatcherConsole")]
+[assembly: AssemblyTitle("StockWatch")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("GoogleStockWatcherConsole")]
+[assembly: AssemblyProduct("StockWatch")]
 [assembly: AssemblyCopyright("Copyright ©  2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("305ac8c3-b82e-4371-9a31-87ffeaebd659")]
+[assembly: Guid("2e291624-61dc-47e4-9aec-0f745cc083b1")]
 
 // Version information for an assembly consists of the following four values:
 //

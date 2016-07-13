@@ -5,13 +5,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace GoogleStockWatcherConsole
+namespace StockWatchConsole
 {
   class Program
   {
     static void Main(string[] args)
     {
-      var watcher = new GoogleStockWatcher.GoogleStockWatcher();
+      var watcher = new StockWatch.StockWatch();
 
       watcher.Start();
 

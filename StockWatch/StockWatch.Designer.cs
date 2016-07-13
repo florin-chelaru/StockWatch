@@ -1,6 +1,6 @@
-﻿namespace GoogleStockWatcher
+﻿namespace StockWatch
 {
-  partial class GoogleStockWatcher
+  partial class StockWatch
   {
     /// <summary> 
     /// Required designer variable.
@@ -31,7 +31,7 @@
       this.eventLog = new System.Diagnostics.EventLog();
       ((System.ComponentModel.ISupportInitialize)(this.eventLog)).BeginInit();
       // 
-      // GoogleStockWatcher
+      // StockWatch
       // 
       this.ServiceName = "Service1";
       ((System.ComponentModel.ISupportInitialize)(this.eventLog)).EndInit();

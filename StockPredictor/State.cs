@@ -1,0 +1,67 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace StockPredictor
+{
+  class State
+  {
+    public Entry[] Entries { get; private set; }
+    
+    public string Hash { get; private set; }
+
+    public string ParentHash { get { return Hash.Substring(0, Hash.LastIndexOf(Sep)); } }
+
+    public State(Entry[] entries, string hash)
+    {
+      Entries = entries;
+      Hash = hash;
+    }
+
+    public static string Sep { get; set; } = " | ";
+
+    public static int Size { get; set; } = 1;
+
+
+    public static Func<Entry[], string> HashFunction { get; set; }
+
+    public static State Create(Entry[] rawEntries, int index)
+    {
+      if (HashFunction == null)
+      {
+        throw new Exception("HashFunction not defined");
+      }
+
+      var entries = new Entry[Size];
+      for (int i = 0; i < Size && i + index < rawEntries.Length; ++i)
+      {
+        entries[i] = rawEntries[i + index];
+      }
+
+      return new State(entries, HashFunction(entries));
+    }
+
+    public static State CreateWithDelay(Entry[] rawEntries, int index, int delay)
+    {
+      if (HashFunction == null)
+      {
+        throw new Exception("HashFunction not defined");
+      }
+
+      var entries = new Entry[Size];
+      for (int i = 0; i < Size - 1 && i + index < rawEntries.Length; ++i)
+      {
+        entries[i] = rawEntries[i + index];
+      }
+
+      var last = rawEntries[index + Size - 1 + delay].Copy();
+      last.Change = last.Close - entries[Size - 2].Close;
+      last.ChangePercent = last.Change / entries[Size - 2].Close;
+      entries[Size - 1] = last;
+
+      return new State(entries, HashFunction(entries));
+    }
+  }
+}
