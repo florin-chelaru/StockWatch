@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using StockPredictor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,5 +57,22 @@ namespace StockWatch
 
     [JsonProperty("pcls_fix")]
     public double PreviousClosePrice { get; set; }
+
+    public Entry ToEntry()
+    {
+      return new Entry
+      {
+        Open = PreviousClosePrice,
+        Close = LastTradePrice,
+        AdjClose = LastTradePrice,
+        Date = DateTime.Parse(LastTradeDateTime),
+        High = LastTradePrice,
+        Low = LastTradePrice,
+        Symbol = Symbol,
+        Volume = LastTradeSize,
+        Change = LastTradePrice - PreviousClosePrice,
+        ChangePercent = (LastTradePrice - PreviousClosePrice) / PreviousClosePrice
+      };
+    }
   }
 }

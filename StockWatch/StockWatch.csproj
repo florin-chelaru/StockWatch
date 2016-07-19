@@ -53,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EmailLogger.cs" />
+    <Compile Include="StockManager.cs" />
     <Compile Include="StockWatch.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -80,6 +81,12 @@
     <EmbeddedResource Include="ProjectInstaller.resx">
       <DependentUpon>ProjectInstaller.cs</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\StockPredictor\StockPredictor\StockPredictor.csproj">
+      <Project>{e1096077-eeae-4e3f-b68c-cd41058df8e6}</Project>
+      <Name>StockPredictor</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

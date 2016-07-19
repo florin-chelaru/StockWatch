@@ -40,8 +40,7 @@ namespace StockWatch
       Subscribers = subscribers;
     }
 
-    //public async void Log(string title, string message, EventLogEntryType type)
-    public async void Log(string title, string message, EventLogEntryType type)
+    public void Log(string title, string message = null, EventLogEntryType type = EventLogEntryType.Information)
     {
       if (From == null || Subscribers == null || Subscribers.FirstOrDefault() == null) { return; }
 
@@ -53,7 +52,7 @@ namespace StockWatch
           From = From,
           Subject = string.Format("[{0}] {1}", type.ToString(), title),
           SubjectEncoding = Encoding.UTF8,
-          Body = message,
+          Body = message ?? title,
           BodyEncoding = Encoding.UTF8,
           IsBodyHtml = false
         };
@@ -71,13 +70,10 @@ namespace StockWatch
 
       try
       {
-        if (lastSend != null)
+        lock (client)
         {
-          await lastSend;
+          client.Send(email);
         }
-
-        lastSend = client.SendMailAsync(email);
-        await lastSend;
         eventLog.WriteEntry(string.Format("Sent email: [{0}]", title), EventLogEntryType.Information);
       }
       catch (Exception ex)

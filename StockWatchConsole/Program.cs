@@ -13,14 +13,13 @@ namespace StockWatchConsole
     {
       var watcher = new StockWatch.StockWatch();
 
-      watcher.Start();
+      watcher.StartStub(@"amzn,c:\Documents\work\stock-prediction\amzn_train.csv");
 
       // Do some testing
 
-      //await Task.Delay(120000);
-      Thread.Sleep(120000);
+      Thread.Sleep(1000 * 60 * 60 * 4);
 
-      watcher.Stop();
+      watcher.StopStub();
     }
   }
 }
