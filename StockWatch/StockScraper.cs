@@ -22,6 +22,74 @@ namespace StockWatch
       this.logger = logger ?? new ConsoleLogger();
     }
 
+    /// <summary>
+    /// This will not work for large ranges of time, per Yahoo API restriction
+    /// </summary>
+    /// <param name="symbol"></param>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <returns></returns>
+    public async Task<IList<Entry>> GetStockSmallHistory(string symbol, DateTime start, DateTime end)
+    {
+      //var start = new DateTime(year, 1, 1);
+      //var end = new DateTime(year, 12, 31);
+      var startStr = start.ToString("yyyy-MM-dd");
+      var endStr = end.ToString("yyyy-MM-dd");
+      var query = string.Format("select * from yahoo.finance.historicaldata where symbol = \"{0}\" and startDate = \"{1}\" and endDate = \"{2}\"",
+            symbol, startStr, endStr);
+      var url = string.Format("https://query.yahooapis.com/v1/public/yql?format=json&diagnostics=false&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=&q={0}", Uri.EscapeUriString(query));
+
+      logger.Info(string.Format("Getting: {0}, {1}-{2}", symbol, startStr, endStr));
+
+      var webReq = WebRequest.Create(url);
+      HttpRequestCachePolicy noCachePolicy = new HttpRequestCachePolicy(HttpRequestCacheLevel.BypassCache);
+      webReq.CachePolicy = noCachePolicy;
+      using (var response = await webReq.GetResponseAsync())
+      {
+        using (var reader = new StreamReader(response.GetResponseStream()))
+        {
+          var text = reader.ReadToEnd().Trim();
+          var obj = JObject.Parse(text);
+
+          var r = obj["query"]["results"] as JObject;
+
+          if (r == null)
+          {
+            logger.Info(string.Format("Finished: {0}, {1}-{2}", symbol, startStr, endStr));
+            return new List<Entry>();
+          }
+
+          var results = r?["quote"] as JArray;
+
+          if (results == null)
+          {
+            logger.Info(string.Format("Finished: {0}, {1}-{2}", symbol, startStr, endStr));
+            return new List<Entry>();
+          }
+
+          var history = new List<Entry>();
+
+          foreach (var result in results)
+          {
+            Entry entry = result.ToObject<Entry>();
+            history.Add(entry);
+          }
+
+          history.Sort((e1, e2) => DateTime.Compare(e1.Date, e2.Date));
+          for (var i = 0; i < history.Count; ++i)
+          {
+            var entry = history[i];
+            entry.Change = i == 0 ? entry.Close - entry.Open : entry.Close - history[i-1].Close;
+            entry.ChangePercent = i == 0 ? entry.Change / entry.Open : entry.Change / history[i-1].Close;
+          }
+
+          logger.Info(string.Format("Finished: {0}, {1}-{2}", symbol, startStr, endStr));
+
+          return history;
+        }
+      }
+    }
+
     public async Task<IList<Entry>> GetStockYear(string symbol, int year)
     {
       var start = new DateTime(year, 1, 1);
@@ -63,9 +131,15 @@ namespace StockWatch
           foreach (var result in results)
           {
             Entry entry = result.ToObject<Entry>();
-            entry.Change = history.Count == 0 ? entry.Close - entry.Open : entry.Close - history.Last().Close;
-            entry.ChangePercent = history.Count == 0 ? entry.Change / entry.Open : entry.Change / history.Last().Close;
             history.Add(entry);
+          }
+
+          history.Sort((e1, e2) => DateTime.Compare(e1.Date, e2.Date));
+          for (var i = 0; i < history.Count; ++i)
+          {
+            var entry = history[i];
+            entry.Change = i == 0 ? entry.Close - entry.Open : entry.Close - history[i - 1].Close;
+            entry.ChangePercent = i == 0 ? entry.Change / entry.Open : entry.Change / history[i - 1].Close;
           }
 
           logger.Info(string.Format("Finished: {0}, {1}", symbol, year));
@@ -87,7 +161,6 @@ namespace StockWatch
 
       for (var year = startYear; year <= endYear; ++year)
       {
-        //yearTasks[year] = GetStockYear(symbol, year);
         var error = false;
 
         do
@@ -106,9 +179,11 @@ namespace StockWatch
               var text = reader.ReadToEnd().Trim();
               logger.Warn(string.Format("Failed to get history for {0}, {1}. Trying again. Details: {2}", symbol, year, text));
             }
-            await Task.Delay(30000);
+            await Task.Delay(5000);
           }
         } while (error);
+
+        await Task.Delay(1000);
       }
 
       all.Sort((e1, e2) => DateTime.Compare(e1.Date, e2.Date));

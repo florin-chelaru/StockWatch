@@ -82,8 +82,8 @@ namespace StockWatch
         symbols = args.Skip(1).ToArray();
       }
 
-      // await Initialize(args);
-      Initialize(symbols);
+      await Initialize();
+      //Initialize(symbols);
 
       // Update the service state to Running.
       serviceStatus.dwCurrentState = ServiceState.SERVICE_RUNNING;
@@ -141,9 +141,9 @@ namespace StockWatch
 
     #endregion
 
-    void Initialize(string[] args)
+    async Task Initialize()
     {
-      if (args.Length == 0)
+      if (symbols == null || symbols.Length == 0)
       {
         logger.Error("No inputs for service");
         Stop();
@@ -157,8 +157,16 @@ namespace StockWatch
           var title = string.Format("[{0}] Prediction: {1:0.000}% (Confidence: {2:0.000}%)", symbol, advice.Prediction * 100.0, advice.Confidence*100.0);
 
           var message = new StringBuilder();
-          message.Append(string.Format("Statistics for {0} and today's ngram, {1}:\n\nOverall average change: {2:0.000}%, {3}/{4}\n\n", 
-            symbol, ngram.Hash, advice.Prediction * 100.0, advice.Confidence * (compositeAdviser.Count - compositeAdviser.NgramSize), compositeAdviser.Count - compositeAdviser.NgramSize));
+          message.Append(string.Format("Statistics for {0} and today's ngram, {1} ({2} | {3}) ({4}-{5}):\n\nOverall average change: {6:0.000}%, {7}/{8}\n\n",
+            symbol,
+            ngram.Hash,
+            string.Join(",", from e in ngram.Entries select string.Format("{0:0.00}", e.AdjClose)),
+            string.Join(",", from e in ngram.Entries select string.Format("{0:0.000}%", e.ChangePercent * 100.0)),
+            ngram.Entries[0].Date.ToString("MM/dd"),
+            ngram.Entries[ngram.Entries.Length - 1].Date.ToString("MM/dd"),
+            advice.Prediction * 100.0, 
+            advice.Confidence * (compositeAdviser.Count - compositeAdviser.NgramSize), 
+            compositeAdviser.Count - compositeAdviser.NgramSize));
           message.Append(string.Format("Ngram {0} found {1} times in a {2} corpus.\n\n", ngram.Hash, compositeAdviser.NgramCount(ngram.Hash), compositeAdviser.Count - compositeAdviser.NgramSize));
 
           message.Append(string.Format("Possible combinations:\n\n"));
@@ -206,7 +214,7 @@ namespace StockWatch
 
       try
       {
-        var stockHistories = new StockScraper(logger).GetCachedStocksHistories(args, new DirectoryInfo(trainingDataDir));
+        var stockHistories = new StockScraper(logger).GetCachedStocksHistories(symbols, new DirectoryInfo(trainingDataDir));
         //var stockHistories = await new StockScraper(logger).GetStocksHistories(args, new DateTime(2010, 1, 1), DateTime.Now);
         //var stockHistories = await new StockScraper(logger).GetStocksHistories(args, new DateTime(2016, 1, 1), DateTime.Now);
 
@@ -214,12 +222,29 @@ namespace StockWatch
         var advisers = new List<IStockAdviser>();
         foreach (var symbol in stockHistories.Keys)
         {
+          // Get recent history
+          IList<Entry> recentHistory = null;
+          var error = false;
+          var yesterday = DateTime.Today.Subtract(TimeSpan.FromDays(1));
+          var startDay = yesterday.Subtract(TimeSpan.FromDays(NgramSize + 8));
+          do
+          {
+            error = false;
+            try { recentHistory = await new StockScraper(logger).GetStockSmallHistory(symbol, startDay, yesterday);}
+            catch (Exception ex)
+            {
+              logger.Warn(string.Format("Unable to get recent history for {0}. Trying again. Details: {1}", symbol, ex.Message));
+              error = true;
+              await Task.Delay(30000);
+            }
+          } while (error);
+
           advisers.Add(new BuyAdviser(symbol, stockHistories[symbol], NgramSize));
           var mgr = new StockManager
           {
             NgramSize = NgramSize,
             Symbol = symbol,
-            RecentHistory = stockHistories[symbol].Skip(Math.Max(0, stockHistories[symbol].Count - NgramSize)).ToList(),
+            RecentHistory = recentHistory,//stockHistories[symbol].Skip(Math.Max(0, stockHistories[symbol].Count - NgramSize)).ToList(),
             Watchers = watchers
           };
           stockManagers[symbol] = mgr;

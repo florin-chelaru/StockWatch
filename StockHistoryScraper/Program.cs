@@ -72,6 +72,7 @@ namespace StockHistoryScraper
       for (var year = startYear; year <= endYear; ++year)
       {
         yearTasks[year] = GetStockYear(symbol, year);
+        await Task.Delay(1000);
       }
 
       List<Entry> all = new List<Entry>();
@@ -145,11 +146,13 @@ namespace StockHistoryScraper
 
     static void Main(string[] args)
     {
-      var start = new DateTime(2016, 1, 1);
+      var start = new DateTime(2010, 1, 1);
       var end = new DateTime(2016, 12, 31);
-      var outDir = @"c:\Documents\work\stock-prediction\test";
+      //var outDir = @"c:\Documents\work\stock-prediction\test";
+      var outDir = @"c:\Documents\work\stock-prediction\train";
 
-      var symbols = new string[] { "amzn", "aapl", "tsla", "goog", "googl", "msft", "fb", "nflx", "baba", "yhoo" };
+      //var symbols = new string[] { "amzn", "aapl", "tsla", "goog", "msft", "fb", "nflx", "baba", "yhoo" };
+      var symbols = new string[] {"znga"};
       //var symbols = new string[] { "fb", "baba"};
       //var symbols = new string[] { "amzn" };
       var t = GetStocksHistories(symbols, start, end);
