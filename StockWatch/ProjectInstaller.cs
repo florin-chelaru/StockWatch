@@ -15,5 +15,14 @@ namespace StockWatch
     {
       InitializeComponent();
     }
+
+    protected override void OnBeforeInstall(IDictionary savedState)
+    {
+      string parameter = @"c:\Documents\work\stock-prediction\train" + " aapl amzn baba fb goog msft nflx tsla yhoo";
+      //Context.Parameters["assemblypath"] = "\"" + Context.Parameters["assemblypath"] + "\" \"" + parameter + "\"";
+      Context.Parameters["assemblypath"] = "\"" + Context.Parameters["assemblypath"] + "\" " + parameter;
+
+      base.OnBeforeInstall(savedState);
+    }
   }
 }

@@ -1,46 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace StockWatch
 {
-  class EmailLogger
+  class EmailLogger : ILogger
   {
     public IEnumerable<MailAddress> Subscribers { get; set; }
 
     public MailAddress From { get; set; }
     
     SmtpClient client;
-    EventLog eventLog;
+    ILogger backupLogger;
 
-    Task lastSend;
-
-    public EmailLogger(EventLog eventLog, MailAddress from = null, IEnumerable<MailAddress> subscribers = null)
+    public EmailLogger(ILogger backupLogger, MailAddress from = null, IEnumerable<MailAddress> subscribers = null)
     {
-      this.eventLog = eventLog;
+      this.backupLogger = backupLogger;
 
       // Comcast blocks ports 25 and 565, so we have to use 3535 unsecured:
-      client = new SmtpClient(@"smtpout.secureserver.net", 3535);
-      client.Credentials = new NetworkCredential("contact@twinfog.com", "Filadelfia7");
+      // client = new SmtpClient(@"smtpout.secureserver.net", 3535);
+      // client.Credentials = new NetworkCredential("contact@twinfog.com", "Filadelfia7");
       // client.EnableSsl = true;
 
       // This works, provided you input the correct password:
-      //client = new SmtpClient("smtp.gmail.com", 587)
-      //{
-      //  Credentials = new NetworkCredential("florin.chelaru@gmail.com", ""),
-      //  EnableSsl = true
-      //};
+      client = new SmtpClient("smtp.gmail.com", 587)
+      {
+        Credentials = new NetworkCredential("florin.chelaru@gmail.com", "mobutusss12conguruzazabanga$"),
+        EnableSsl = true
+      };
 
       From = from;
       Subscribers = subscribers;
     }
 
-    public void Log(string title, string message = null, EventLogEntryType type = EventLogEntryType.Information)
+    public void Log(string message, string title = null, string type = "Info")
     {
       if (From == null || Subscribers == null || Subscribers.FirstOrDefault() == null) { return; }
 
@@ -50,9 +46,9 @@ namespace StockWatch
         email = new MailMessage
         {
           From = From,
-          Subject = string.Format("[{0}] {1}", type.ToString(), title),
+          Subject = string.Format("[{0}] {1}", type, title ?? message),
           SubjectEncoding = Encoding.UTF8,
-          Body = message ?? title,
+          Body = message,
           BodyEncoding = Encoding.UTF8,
           IsBodyHtml = false
         };
@@ -63,10 +59,9 @@ namespace StockWatch
       }
       catch (Exception ex)
       {
-        eventLog.WriteEntry(string.Format("An error occured sending an email: {0}\n{1}", ex.Message, ex.StackTrace), EventLogEntryType.Error);
+        backupLogger.Error(string.Format("An error occured sending an email: {0}\n{1}", ex.Message, ex.StackTrace));
         return;
       }
-
 
       try
       {
@@ -74,12 +69,27 @@ namespace StockWatch
         {
           client.Send(email);
         }
-        eventLog.WriteEntry(string.Format("Sent email: [{0}]", title), EventLogEntryType.Information);
+        backupLogger.Info(string.Format("Sent email: [{0}]", title ?? message));
       }
       catch (Exception ex)
       {
-        eventLog.WriteEntry(string.Format("An error occured sending an email: {0}\n{1}", ex.Message, ex.StackTrace), EventLogEntryType.Error);
+        backupLogger.Info(string.Format("An error occured sending an email: {0}\n{1}", ex.Message, ex.StackTrace));
       }
+    }
+
+    public void Info(string message, string title = null)
+    {
+      Log(message, title, "Info");
+    }
+
+    public void Warn(string message, string title = null)
+    {
+      Log(message, title, "Warn");
+    }
+
+    public void Error(string message, string title = null)
+    {
+      Log(message, title, "Error");
     }
   }
 }

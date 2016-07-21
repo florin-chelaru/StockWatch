@@ -11,9 +11,9 @@ namespace StockWatchConsole
   {
     static void Main(string[] args)
     {
-      var watcher = new StockWatch.StockWatch();
+      var watcher = new StockWatch.StockWatch("amzn", "aapl", "goog", "tsla", "msft");
 
-      watcher.StartStub(@"amzn,c:\Documents\work\stock-prediction\amzn_train.csv");
+      watcher.StartStub();
 
       // Do some testing
 

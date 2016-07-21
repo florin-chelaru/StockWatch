@@ -22,22 +22,25 @@ namespace StockWatch
     [DllImport("advapi32.dll", SetLastError = true)]
     private static extern bool SetServiceStatus(IntPtr handle, ref ServiceStatus serviceStatus);
 
-    EmailLogger emailLogger;
+    ILogger logger;
     
-    const int NgramSize = 2;
-    const int SellDelay = 3;
-    const int EmergencySellDelay = 30;
-
-    const double MaxStockInvestment = 5000.0;
-    const double InvestAtATime = 1000.0;
+    const int NgramSize = 3;
 
     IDictionary<string, StockManager> stockManagers;
+    CompositeAdviser compositeAdviser;
 
     Timer timer;
+    DateTime lastIterationTime = DateTime.Now.Subtract(TimeSpan.FromDays(1.0)); // yesterday
 
-    public StockWatch()
+    string[] symbols;
+    string trainingDataDir;
+
+    public StockWatch(params string[] args)
     {
       InitializeComponent();
+
+      trainingDataDir = args.Length >= 1 ? args[0] : @"c:\Documents\work\stock-prediction\train";
+      symbols = args.Skip(1).ToArray();
 
       eventLog = new EventLog();
       if (!EventLog.SourceExists("StockWatchSource"))
@@ -47,13 +50,18 @@ namespace StockWatch
       eventLog.Source = "StockWatchSource";
       eventLog.Log = "StockWatchLog";
 
-      emailLogger = new EmailLogger(eventLog,
+      ILogger eventLogger = new EventLogger(eventLog);
+
+      var emailLogger = new EmailLogger(eventLogger,
         // new MailAddress("florin.chelaru@gmail.com", "Florin Chelaru"),
         new MailAddress("florin@twinfog.com", "StockWatch"),
         new MailAddress[] 
         {
           new MailAddress("florin.chelaru@gmail.com", "Florin Chelaru")
         });
+
+      logger = new CompositeLogger(new ILogger[] { eventLogger, emailLogger, new ConsoleLogger() });
+      //logger = new CompositeLogger(new ILogger[] { new ConsoleLogger() });
     }
 
     #region Event Handlers
@@ -63,31 +71,38 @@ namespace StockWatch
       ServiceStatus serviceStatus = new ServiceStatus();
 
       // Update the service state to Start Pending.
-      Log("Service starting");
+      logger.Info("Service starting");
       serviceStatus.dwCurrentState = ServiceState.SERVICE_START_PENDING;
       serviceStatus.dwWaitHint = 100000;
       SetServiceStatus(ServiceHandle, ref serviceStatus);
 
-      await Initialize(args);
+      if (args != null && args.Length > 0)
+      {
+        trainingDataDir = args.Length >= 1 ? args[0] : @"c:\Documents\work\stock-prediction\train";
+        symbols = args.Skip(1).ToArray();
+      }
+
+      // await Initialize(args);
+      Initialize(symbols);
 
       // Update the service state to Running.
       serviceStatus.dwCurrentState = ServiceState.SERVICE_RUNNING;
       SetServiceStatus(this.ServiceHandle, ref serviceStatus);
-      Log("Service Running");
+      logger.Info("Service Running");
 
       // Call the iterating function for the first time
       await Iterate();
 
       // Set up a timer to trigger periodically
       timer = new Timer();
-      timer.Interval = 1000 * 60 * 60 * 1; // ms * s * m * h
+      timer.Interval = 1000 * 60 * 60 * 3; // ms * s * m * h
       timer.Elapsed += async (sender, e) => await Iterate();
       timer.Start();
     }
 
     protected override void OnStop()
     {
-      Log("Stopping");
+      logger.Info("Stopping");
       if (timer != null && timer.Enabled)
       {
         timer.Stop();
@@ -126,174 +141,141 @@ namespace StockWatch
 
     #endregion
 
-    async Task Initialize(string[] args)
+    void Initialize(string[] args)
     {
       if (args.Length == 0)
       {
-        Log("No inputs for service");
+        logger.Error("No inputs for service");
         Stop();
       }
 
+      var watchers = new Action<string, Ngram>[]
+      {
+        (symbol, ngram) =>
+        {
+          var advice = compositeAdviser.Predict(ngram);
+          var title = string.Format("[{0}] Prediction: {1:0.000}% (Confidence: {2:0.000}%)", symbol, advice.Prediction * 100.0, advice.Confidence*100.0);
+
+          var message = new StringBuilder();
+          message.Append(string.Format("Statistics for {0} and today's ngram, {1}:\n\nOverall average change: {2:0.000}%, {3}/{4}\n\n", 
+            symbol, ngram.Hash, advice.Prediction * 100.0, advice.Confidence * (compositeAdviser.Count - compositeAdviser.NgramSize), compositeAdviser.Count - compositeAdviser.NgramSize));
+          message.Append(string.Format("Ngram {0} found {1} times in a {2} corpus.\n\n", ngram.Hash, compositeAdviser.NgramCount(ngram.Hash), compositeAdviser.Count - compositeAdviser.NgramSize));
+
+          message.Append(string.Format("Possible combinations:\n\n"));
+
+          var relevantPairs = new List<KeyValuePair<string, int>>();
+          foreach (var p in compositeAdviser.NgramCounts)
+          {
+            if (p.Key.StartsWith(ngram.Hash))
+            {
+              relevantPairs.Add(p);
+            }
+          }
+          relevantPairs.Sort((p1, p2) => p2.Value - p1.Value);
+          foreach (var p in relevantPairs)
+          {
+            message.Append(string.Format("{0}: {1}/{2} ({3:0.000}%)\n", p.Key, p.Value, compositeAdviser.NgramCount(ngram.Hash), (double)p.Value / compositeAdviser.NgramCount(ngram.Hash) * 100.0));
+          }
+
+          message.Append("\n\nWhat other advisers think:\n\n");
+          foreach (BuyAdviser a in compositeAdviser.Advisers)
+          {
+            var adv = a.Predict(ngram);
+            message.Append(string.Format("A[{0}]: {1:0.000}%, {2}/{3}\n", a.Symbol, adv.Prediction * 100.0, adv.Confidence * (a.Count - a.NgramSize), a.Count - a.NgramSize));
+
+            IDictionary<string, IList<Ngram>> options;
+            if (a.PredictionNgrams.TryGetValue(ngram.Hash, out options))
+            {
+              relevantPairs = new List<KeyValuePair<string, int>>();
+              foreach (var p in options)
+              {
+                relevantPairs.Add(new KeyValuePair<string, int>(p.Key, p.Value.Count));
+              }
+              relevantPairs.Sort((p1, p2) => p2.Value - p1.Value);
+              foreach (var p in relevantPairs)
+              {
+                message.Append(string.Format("A[{0}]: {1}: {2} ({3:0.000}%)\n", a.Symbol, p.Key, p.Value, (double)p.Value / a.NgramCount(ngram.Hash) * 100.0));
+              }
+            }
+            message.Append("\n\n");
+          }
+
+          logger.Info(message.ToString(), title);
+        }
+      };
+
       try
       {
-        var inputs = (from arg in args select arg.Split(',')).ToArray();
+        var stockHistories = new StockScraper(logger).GetCachedStocksHistories(args, new DirectoryInfo(trainingDataDir));
+        //var stockHistories = await new StockScraper(logger).GetStocksHistories(args, new DateTime(2010, 1, 1), DateTime.Now);
+        //var stockHistories = await new StockScraper(logger).GetStocksHistories(args, new DateTime(2016, 1, 1), DateTime.Now);
+
         stockManagers = new Dictionary<string, StockManager>();
-        foreach (var input in inputs)
+        var advisers = new List<IStockAdviser>();
+        foreach (var symbol in stockHistories.Keys)
         {
+          advisers.Add(new BuyAdviser(symbol, stockHistories[symbol], NgramSize));
           var mgr = new StockManager
           {
             NgramSize = NgramSize,
-            Symbol = input[0],
-            TrainingFilePath = input[1],
-            Adviser = new BuyAdviser(Entry.FromCsvFile(input[1]), NgramSize),
-            EmergencySellDelay = EmergencySellDelay,
-            SellDelay = SellDelay,
-            MaxInvestment = MaxStockInvestment,
-            InvestAtATime = InvestAtATime
+            Symbol = symbol,
+            RecentHistory = stockHistories[symbol].Skip(Math.Max(0, stockHistories[symbol].Count - NgramSize)).ToList(),
+            Watchers = watchers
           };
-          stockManagers[input[0]] = mgr;
+          stockManagers[symbol] = mgr;
         }
 
-        await InitializeRecentHistory();
+        compositeAdviser = new CompositeAdviser(advisers, NgramSize);
       }
       catch (Exception ex)
       {
-        Log(ex);
-      }
-    }
-
-    async Task InitializeRecentHistory()
-    {
-      int minDaysBack = NgramSize + 8; // Just to be on the safe side, we'll take more days than we need, to account for holidays.
-      var responseTasks = new Dictionary<string, Task<WebResponse>>();
-      foreach (var stock in stockManagers.Keys)
-      {
-        try
-        {
-          var today = DateTime.Now;
-          var first = today.Subtract(TimeSpan.FromDays(minDaysBack));
-          var query = string.Format("select * from yahoo.finance.historicaldata where symbol = \"{0}\" and startDate = \"{1}\" and endDate = \"{0}\"",
-            stock, first.ToString("yyyy-MM-dd"), today.ToString("yyyy-MM-dd"));
-          var url = string.Format("https://query.yahooapis.com/v1/public/yql?format=json&diagnostics=false&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=&q={0}", Uri.EscapeUriString(query));
-  
-          var webReq = WebRequest.Create(url);
-          responseTasks[stock] = webReq.GetResponseAsync();
-        }
-        catch (Exception ex)
-        {
-          Log(ex);
-        }
-      }
-
-      foreach (var tuple in responseTasks)
-      {
-        var stock = tuple.Key;
-        var task = tuple.Value;
-        try
-        {
-          using (var response = await task)
-          {
-            using (var reader = new StreamReader(response.GetResponseStream()))
-            {
-              var text = reader.ReadToEnd().Trim();
-              var obj = JObject.Parse(text);
-
-              var results = (JArray)(obj["query"]["results"]["quote"]);
-
-              var history = new List<Entry>();
-
-              foreach (var result in results)
-              {
-                Entry entry = result.ToObject<Entry>();
-                history.Add(entry);
-              }
-
-              history.Sort((e1, e2) => DateTime.Compare(e1.Date, e2.Date));
-              stockManagers[stock].RecentHistory = history;
-            }
-          }
-        }
-        catch (Exception ex)
-        {
-          Log(ex);
-        }
+        Error(ex);
       }
     }
 
     async Task Iterate()
     {
-      Log("Iterating");
-      var responseTasks = new Dictionary<string, Task<WebResponse>>();
-      foreach (var stock in stockManagers.Keys)
+      if (!IsWithinMarketHours) { return; }
+
+      logger.Info("Iterating");
+
+      var quotes = await new StockScraper(logger).GetRealTimeQuotes(stockManagers.Keys);
+
+      foreach (var p in quotes)
       {
-        try
-        {
-          var webReq = WebRequest.Create(string.Format(@"http://finance.google.com/finance/info?client=ig&q=nasdaq:{0}", stock));
-          responseTasks[stock] = webReq.GetResponseAsync();
-        }
-        catch (Exception ex)
-        {
-          Log(ex);
-        }
+        stockManagers[p.Key].Add(p.Value);
       }
+    }
 
-      foreach (var tuple in responseTasks)
+    bool IsFirstIterationOfDay
+    {
+      get
       {
-        var stock = tuple.Key;
-        var task = tuple.Value;
-        var mgr = stockManagers[stock];
-        try
-        {
-          using (var response = await task)
-          {
-            using (var reader = new StreamReader(response.GetResponseStream()))
-            {
-              var text = reader.ReadToEnd().Replace("//", "").Trim();
-              var obj = JArray.Parse(text);
-              StockQuote quote = obj[0].ToObject<StockQuote>();
+        var now = DateTime.Now;
+        var ret = now.Subtract(lastIterationTime) >= TimeSpan.FromDays(1.0) || now.Day != lastIterationTime.Day;
+        lastIterationTime = now;
+        return ret;
+      }
+    }
 
-              Entry entry = quote.ToEntry();
-
-              mgr.Decide(entry,
-
-                // Buy
-                (nShares, investment) => 
-                  Log(string.Format("Buy {0} x {1} at {2}/share for {3}", nShares, mgr.Symbol, entry.Close, investment), type: EventLogEntryType.Warning),
-
-                // Sell
-                (gainLoss) => 
-                  Log(string.Format("Sell {0} x {1} at {2}/share for {3} (Gain/loss: {4})", 
-                    mgr.ShareCount, mgr.Symbol, entry.Close, entry.Close * mgr.ShareCount, gainLoss), type: EventLogEntryType.Warning),
-                    
-                // Wait
-                () => Log(string.Format("{0}: Wait", mgr.Symbol)),
-
-                // Log
-                Log);
-              //var message = string.Format("[{0}] {1} Price: {2} Last Close Price: {3}", quote.LastTradeDateTime, quote.Symbol, quote.LastTradePrice, quote.PreviousClosePrice);
-              //Log(message);
-            }
-          }
-        }
-        catch (Exception ex)
-        {
-          Log(ex);
-        }
+    bool IsWithinMarketHours
+    {
+      get
+      {
+        var timeUtc = DateTime.UtcNow;
+        TimeZoneInfo easternZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+        DateTime now = TimeZoneInfo.ConvertTimeFromUtc(timeUtc, easternZone);
+        return ((now.Hour == 9 && now.Minute > 30) || now.Hour >= 10) && (now.Hour <= 16);
       }
     }
 
     #region Logging
 
-    void Log(string title, string message = null, EventLogEntryType type = EventLogEntryType.Information)
+    void Error(Exception ex)
     {
-      eventLog.WriteEntry(message ?? title, type);
-      emailLogger.Log(title, message, type);
-    }
-
-    void Log(Exception ex)
-    {
-      Log(ex.GetType().ToString(),
-          string.Format("An error occured: {0}\n{1}", ex.Message, ex.StackTrace), EventLogEntryType.Error);
+      logger.Error(
+        string.Format("An error occured: {0}\n{1}", ex.Message, ex.StackTrace),
+        ex.GetType().ToString());
     }
 
     #endregion

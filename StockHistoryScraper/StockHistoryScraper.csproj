@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{2E291624-61DC-47E4-9AEC-0F745CC083B1}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <ProjectGuid>{384CB173-6695-4C03-911D-AC57ADD7AF74}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>StockWatch</RootNamespace>
-    <AssemblyName>StockWatch</AssemblyName>
+    <RootNamespace>StockHistoryScraper</RootNamespace>
+    <AssemblyName>StockHistoryScraper</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -31,65 +31,31 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject>StockWatch.Program</StartupObject>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Management" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
-    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CompositeLogger.cs" />
-    <Compile Include="ConsoleLogger.cs" />
-    <Compile Include="EmailLogger.cs" />
-    <Compile Include="EventLogger.cs" />
-    <Compile Include="ILogger.cs" />
-    <Compile Include="StockManager.cs" />
-    <Compile Include="StockScraper.cs" />
-    <Compile Include="StockWatch.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="StockWatch.Designer.cs">
-      <DependentUpon>StockWatch.cs</DependentUpon>
-    </Compile>
     <Compile Include="Program.cs" />
-    <Compile Include="ProjectInstaller.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ProjectInstaller.Designer.cs">
-      <DependentUpon>ProjectInstaller.cs</DependentUpon>
-    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="StockQuote.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="StockWatch.resx">
-      <DependentUpon>StockWatch.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ProjectInstaller.resx">
-      <DependentUpon>ProjectInstaller.cs</DependentUpon>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\StockPredictor\StockPredictor\StockPredictor.csproj">
-      <Project>{e1096077-eeae-4e3f-b68c-cd41058df8e6}</Project>
+      <Project>{E1096077-EEAE-4E3F-B68C-CD41058DF8E6}</Project>
       <Name>StockPredictor</Name>
     </ProjectReference>
   </ItemGroup>
