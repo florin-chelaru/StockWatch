@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 
 namespace StockPredictor
 {
-  class Advice
+  public class Advice
   {
-    public double PredictionMean { get; set; }
-    public double PredictionMedian { get; set; }
+    public double Prediction { get; set; }
     public double Confidence { get; set; }
+
+    public double PositiveChangeChance { get; set; }
   }
 }

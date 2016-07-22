@@ -6,28 +6,46 @@ using System.Threading.Tasks;
 
 namespace StockPredictor
 {
-  class BuyAdviser
+  public class BuyAdviser : IStockAdviser
   {
     const string Sep = ",";
 
     List<Entry> history = new List<Entry>();
 
-    IDictionary<string, IList<Ngram>> ngrams = new Dictionary<string, IList<Ngram>>();
+    IDictionary<string, IList<Ngram>> parentNgrams = new Dictionary<string, IList<Ngram>>();
 
     // parentHash -> hash -> ngrams
     IDictionary<string, IDictionary<string, IList<Ngram>>> predictionNgrams = new Dictionary<string, IDictionary<string, IList<Ngram>>>();
 
     Ngram last;
-
     Advice lastAdvice;
+    AggregateMethod aggregate;
+
+    public string Symbol { get; private set; }
 
     public int NgramSize { get; private set; }
 
     public int Count { get { return history.Count; } }
 
-    public BuyAdviser(IEnumerable<Entry> history = null, int ngramSize = 2)
+    public IDictionary<string, IDictionary<string, IList<Ngram>>> PredictionNgrams { get { return predictionNgrams; } }
+
+    public IDictionary<string, int> NgramCounts { get; private set; } = new Dictionary<string, int>();
+
+    public IDictionary<string, int> ParentNgramCounts { get; private set; } = new Dictionary<string, int>();
+
+    // Random rand = new Random();
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="history"></param>
+    /// <param name="ngramSize"></param>
+    /// <param name="aggregate">The default will be average</param>
+    public BuyAdviser(string symbol, IEnumerable<Entry> history = null, int ngramSize = 2, AggregateMethod aggregate = null)
     {
-      this.NgramSize = ngramSize;
+      this.Symbol = symbol;
+      this.aggregate = aggregate ?? AggregateMethod.Average;
+      NgramSize = ngramSize;
       if (history != null)
       {
         foreach (var e in history)
@@ -73,10 +91,10 @@ namespace StockPredictor
         var ngram = new Ngram(entries);
 
         IList<Ngram> hashNgrams;
-        if (!ngrams.TryGetValue(ngram.Hash, out hashNgrams))
+        if (!parentNgrams.TryGetValue(ngram.Hash, out hashNgrams))
         {
           hashNgrams = new List<Ngram>();
-          ngrams[ngram.Hash] = hashNgrams;
+          parentNgrams[ngram.Hash] = hashNgrams;
         }
         hashNgrams.Add(ngram);
         last = ngram;
@@ -103,11 +121,32 @@ namespace StockPredictor
         }
         
         hashNgrams.Add(ngram);
+
+        int parentNgramCount;
+        if (!ParentNgramCounts.TryGetValue(ngram.ParentHash, out parentNgramCount))
+        {
+          parentNgramCount = 0;
+        }
+        ParentNgramCounts[ngram.ParentHash] = parentNgramCount + 1;
+
+        int ngramCount;
+        if (!NgramCounts.TryGetValue(ngram.Hash, out ngramCount))
+        {
+          ngramCount = 0;
+        }
+        NgramCounts[ngram.Hash] = ngramCount + 1;
       }
     }
 
     public Advice Predict(Ngram ngram)
     {
+      // TODO: Remove. Just testing to see whether random does the same...
+      //return new Advice
+      //{
+      //  PredictionMean = rand.NextDouble() * 2.0 - 1.0,
+      //  Confidence = 0.5
+      //};
+
       if (ngram == null)
       {
         return new Advice();
@@ -120,36 +159,36 @@ namespace StockPredictor
         return new Advice();
       }
 
-      // Compute average of all options
-      double sum = 0.0;
-      int count = 0;
-      // Also compute the median
+      // Make a list of all options
       var changes = new List<double>();
       foreach (var ngrams in options.Values)
       {
         foreach (var g in ngrams)
         {
-          sum += g.Entries[g.Entries.Length - 1].ChangePercent;
-          ++count;
-
           changes.Add(g.Entries[g.Entries.Length - 1].ChangePercent);
         }
       }
-      if (count == 0.0)
-      {
-        return new Advice();
-      }
-
-      changes.Sort();
-      var i1 = changes.Count / 2;
-      var i2 = (changes.Count - 1) / 2;
-
+      
       return new Advice
       {
-        PredictionMedian = (changes[i1] + changes[i2]) / 2.0,
-        PredictionMean = sum / count,
-        Confidence = count / (double)(history.Count - NgramSize)
+        Prediction = aggregate.Aggregate(changes),
+        Confidence = changes.Count / (double)(history.Count - NgramSize),
+        PositiveChangeChance = changes.Where((c) => c >= 0).Count() / (double)changes.Count
       };
+    }
+
+    public int NgramCount(Ngram ngram)
+    {
+      IDictionary<string, int> counts = ngram.Entries.Length == NgramSize + 1 ? NgramCounts : ParentNgramCounts;
+      int ret;
+      return counts.TryGetValue(ngram.Hash, out ret) ? ret : 0;
+    }
+
+    public int NgramCount(string hash)
+    {
+      int ret;
+      return NgramCounts.TryGetValue(hash, out ret) ? ret :
+        (ParentNgramCounts.TryGetValue(hash, out ret) ? ret : 0);
     }
   }
 }

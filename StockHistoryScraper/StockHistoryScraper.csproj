@@ -54,8 +54,8 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\StockPredictor\StockPredictor\StockPredictor.csproj">
-      <Project>{E1096077-EEAE-4E3F-B68C-CD41058DF8E6}</Project>
+    <ProjectReference Include="..\StockPredictor\StockPredictor.csproj">
+      <Project>{e1096077-eeae-4e3f-b68c-cd41058df8e6}</Project>
       <Name>StockPredictor</Name>
     </ProjectReference>
   </ItemGroup>

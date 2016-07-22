@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace StockPredictor
 {
-  class Entry
+  public class Entry
   {
     public string Symbol { get; set; }
     public DateTime Date { get; set; }
@@ -15,9 +16,15 @@ namespace StockPredictor
     public double Close { get; set; }
     public double High { get; set; }
     public double Low { get; set; }
+    
+    [JsonProperty("Adj_Close")]
     public double AdjClose { get; set; }
     public int Volume { get; set; }
+
+    [JsonIgnore]
     public double Change { get; set; }
+
+    [JsonIgnore]
     public double ChangePercent { get; set; }
 
     public Entry Copy()
@@ -39,7 +46,7 @@ namespace StockPredictor
 
     public static Entry ParseCsv(string csv)
     {
-      var tokens = csv.Split(',');
+      var tokens = csv.Trim().Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
       var e = new Entry
       {
@@ -60,6 +67,11 @@ namespace StockPredictor
       }
 
       return e;
+    }
+
+    public string ToCsv()
+    {
+      return string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},", Symbol, Date.ToShortDateString(), Open, Close, High, Low, AdjClose, Volume, Change, ChangePercent);
     }
 
     public static Entry[] FromCsvFile(string path)

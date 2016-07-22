@@ -154,16 +154,18 @@ namespace StockWatch
         (symbol, ngram) =>
         {
           var advice = compositeAdviser.Predict(ngram);
-          var title = string.Format("[{0}] Prediction: {1:0.000}% (Confidence: {2:0.000}%)", symbol, advice.Prediction * 100.0, advice.Confidence*100.0);
+          var title = string.Format("[{0}] Positive Chance: {1:0.00}% Prediction: {2:0.000}% (Confidence: {3:0.000}%)", 
+            symbol, advice.PositiveChangeChance * 100.0, advice.Prediction * 100.0, advice.Confidence*100.0);
 
           var message = new StringBuilder();
-          message.Append(string.Format("Statistics for {0} and today's ngram, {1} ({2} | {3}) ({4}-{5}):\n\nOverall average change: {6:0.000}%, {7}/{8}\n\n",
+          message.Append(string.Format("Statistics for {0} and today's ngram, {1} ({2} | {3}) ({4}-{5}):\n\nOverall chance of positive change: {6:0.00}%\n\nOverall average change: {7:0.000}%, {8}/{9}\n\n",
             symbol,
             ngram.Hash,
             string.Join(",", from e in ngram.Entries select string.Format("{0:0.00}", e.AdjClose)),
             string.Join(",", from e in ngram.Entries select string.Format("{0:0.000}%", e.ChangePercent * 100.0)),
             ngram.Entries[0].Date.ToString("MM/dd"),
             ngram.Entries[ngram.Entries.Length - 1].Date.ToString("MM/dd"),
+            advice.PositiveChangeChance * 100.0,
             advice.Prediction * 100.0, 
             advice.Confidence * (compositeAdviser.Count - compositeAdviser.NgramSize), 
             compositeAdviser.Count - compositeAdviser.NgramSize));
@@ -189,7 +191,7 @@ namespace StockWatch
           foreach (BuyAdviser a in compositeAdviser.Advisers)
           {
             var adv = a.Predict(ngram);
-            message.Append(string.Format("A[{0}]: {1:0.000}%, {2}/{3}\n", a.Symbol, adv.Prediction * 100.0, adv.Confidence * (a.Count - a.NgramSize), a.Count - a.NgramSize));
+            message.Append(string.Format("A[{0}]: {1:0.000}%, {2}/{3}; Pos-chance: {4:0.00}%\n", a.Symbol, adv.Prediction * 100.0, adv.Confidence * (a.Count - a.NgramSize), a.Count - a.NgramSize, adv.PositiveChangeChance * 100.0));
 
             IDictionary<string, IList<Ngram>> options;
             if (a.PredictionNgrams.TryGetValue(ngram.Hash, out options))

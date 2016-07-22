@@ -88,7 +88,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\StockPredictor\StockPredictor\StockPredictor.csproj">
+    <ProjectReference Include="..\StockPredictor\StockPredictor.csproj">
       <Project>{e1096077-eeae-4e3f-b68c-cd41058df8e6}</Project>
       <Name>StockPredictor</Name>
     </ProjectReference>

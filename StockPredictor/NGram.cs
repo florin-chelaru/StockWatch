@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace StockPredictor
 {
-  class Ngram
+  public class Ngram
   {
     public const string Sep = ",";
 
@@ -19,7 +19,8 @@ namespace StockPredictor
     {
       get
       {
-        return hash ?? (hash = string.Join(Sep, from e in Entries select Math.Max(Math.Min((int)Math.Floor(e.ChangePercent * 100.0), 2), -2)));
+        //return hash ?? (hash = string.Join(Sep, from e in Entries select Math.Max(Math.Min((int)Math.Floor(e.ChangePercent * 100.0), 2), -2)));
+        return hash ?? (hash = string.Join(Sep, from e in Entries select Math.Max(Math.Min(e.ChangePercent < 0 ? (int)Math.Floor(e.ChangePercent * 100.0) : (int)Math.Ceiling(e.ChangePercent * 100.0), 3), -3)));
       }
     }
 
@@ -27,7 +28,8 @@ namespace StockPredictor
     {
       get
       {
-        return parentHash ?? (parentHash = string.Join(Sep, from e in Entries.Take(Entries.Length - 1) select Math.Max(Math.Min((int)Math.Floor(e.ChangePercent * 100.0), 2), -2)));
+        //return parentHash ?? (parentHash = string.Join(Sep, from e in Entries.Take(Entries.Length - 1) select Math.Max(Math.Min((int)Math.Floor(e.ChangePercent * 100.0), 2), -2)));
+        return parentHash ?? (parentHash = string.Join(Sep, from e in Entries.Take(Entries.Length - 1) select Math.Max(Math.Min(e.ChangePercent < 0 ? (int)Math.Floor(e.ChangePercent * 100.0) : (int)Math.Ceiling(e.ChangePercent * 100.0), 3), -3)));
       }
     }
 
