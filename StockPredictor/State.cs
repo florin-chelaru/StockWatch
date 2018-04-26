@@ -1,18 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StockPredictor
 {
   class State
   {
-    public Entry[] Entries { get; private set; }
-    
-    public string Hash { get; private set; }
+    public Entry[] Entries { get; }
 
-    public string ParentHash { get { return Hash.Substring(0, Hash.LastIndexOf(Sep)); } }
+    public string Hash { get; }
+
+    public string ParentHash => Hash.Substring(0,
+      Hash.LastIndexOf(Sep, StringComparison.Ordinal));
 
     public State(Entry[] entries, string hash)
     {
@@ -43,7 +40,8 @@ namespace StockPredictor
       return new State(entries, HashFunction(entries));
     }
 
-    public static State CreateWithDelay(Entry[] rawEntries, int index, int delay)
+    public static State CreateWithDelay(Entry[] rawEntries, int index,
+      int delay)
     {
       if (HashFunction == null)
       {

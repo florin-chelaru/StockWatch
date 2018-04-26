@@ -1,12 +1,11 @@
-﻿using Newtonsoft.Json.Linq;
-using StockPredictor;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+using StockPredictor;
 
 namespace StockHistoryScraper
 {
@@ -17,9 +16,12 @@ namespace StockHistoryScraper
       Console.WriteLine("Getting: {0}, {1}", symbol, year);
       var start = new DateTime(year, 1, 1);
       var end = new DateTime(year, 12, 31);
-      var query = string.Format("select * from yahoo.finance.historicaldata where symbol = \"{0}\" and startDate = \"{1}\" and endDate = \"{2}\"",
-            symbol,  start.ToString("yyyy-MM-dd"), end.ToString("yyyy-MM-dd"));
-      var url = string.Format("https://query.yahooapis.com/v1/public/yql?format=json&diagnostics=false&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=&q={0}", Uri.EscapeUriString(query));
+      var query = string.Format(
+        "select * from yahoo.finance.historicaldata where symbol = \"{0}\" and startDate = \"{1}\" and endDate = \"{2}\"",
+        symbol, start.ToString("yyyy-MM-dd"), end.ToString("yyyy-MM-dd"));
+      var url = string.Format(
+        "https://query.yahooapis.com/v1/public/yql?format=json&diagnostics=false&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=&q={0}",
+        Uri.EscapeUriString(query));
 
       var webReq = WebRequest.Create(url);
       using (var response = await webReq.GetResponseAsync())
@@ -37,7 +39,7 @@ namespace StockHistoryScraper
             return new List<Entry>();
           }
 
-          var results = r?["quote"] as JArray;
+          var results = r["quote"] as JArray;
 
           if (results == null)
           {
@@ -59,10 +61,11 @@ namespace StockHistoryScraper
 
           return history;
         }
-      }        
+      }
     }
 
-    static async Task<IList<Entry>> GetStockHistory(string symbol, DateTime start, DateTime? end = null)
+    static async Task<IList<Entry>> GetStockHistory(string symbol,
+      DateTime start, DateTime? end = null)
     {
       DateTime e = end ?? DateTime.Now;
       var startYear = start.Year;
@@ -79,13 +82,16 @@ namespace StockHistoryScraper
       foreach (var p in yearTasks)
       {
         var entries = await p.Value;
-        all.AddRange(entries.Where(entry => entry.Date >= start && entry.Date <= e));
+        all.AddRange(entries.Where(entry =>
+          entry.Date >= start && entry.Date <= e));
       }
+
       all.Sort((e1, e2) => DateTime.Compare(e1.Date, e2.Date));
       return all;
     }
 
-    static async Task<IDictionary<string, IList<Entry>>> GetStocksHistories(IEnumerable<string> symbols, DateTime start, DateTime? end = null)
+    static async Task<IDictionary<string, IList<Entry>>> GetStocksHistories(
+      IEnumerable<string> symbols, DateTime start, DateTime? end = null)
     {
       var tasks = new Dictionary<string, Task<IList<Entry>>>();
       foreach (var symbol in symbols)
@@ -96,11 +102,12 @@ namespace StockHistoryScraper
         }
         catch (Exception ex)
         {
-          Console.WriteLine("Error for {0} {1}-{2}: {3}", symbol, start.Year, end != null ? end.Value.Year : DateTime.Now.Year, ex.Message);
+          Console.WriteLine("Error for {0} {1}-{2}: {3}", symbol, start.Year,
+            end?.Year ?? DateTime.Now.Year, ex.Message);
         }
       }
 
-      IDictionary<string, IList<Entry>> ret = new Dictionary<string, IList<Entry>>();
+      var ret = new Dictionary<string, IList<Entry>>();
       foreach (var p in tasks)
       {
         try
@@ -109,14 +116,16 @@ namespace StockHistoryScraper
         }
         catch (Exception ex)
         {
-          Console.WriteLine("Error for {0} {1}-{2}: {3}", p.Key, start.Year, end != null ? end.Value.Year : DateTime.Now.Year, ex.Message);
+          Console.WriteLine("Error for {0} {1}-{2}: {3}", p.Key, start.Year,
+            end?.Year ?? DateTime.Now.Year, ex.Message);
         }
       }
 
       return ret;
     }
 
-    static void CheckStrategy(IDictionary<string, IList<Entry>> tests, Func<IList<Entry>, int, bool> strategy, int ngramSize = 2)
+    public static void CheckStrategy(IDictionary<string, IList<Entry>> tests,
+      Func<IList<Entry>, int, bool> strategy, int ngramSize = 2)
     {
       var count = 0;
       var total = 0;
@@ -141,7 +150,8 @@ namespace StockHistoryScraper
         }
       }
 
-      Console.WriteLine("{0} {1} {2} | {3} {4} | {5}", correct, total, count, (double)correct / total, (double)total / count, totalGainPc * 100.0);
+      Console.WriteLine("{0} {1} {2} | {3} {4} | {5}", correct, total, count,
+        (double) correct / total, (double) total / count, totalGainPc * 100.0);
     }
 
     static void Main(string[] args)
@@ -152,7 +162,7 @@ namespace StockHistoryScraper
       var outDir = @"c:\Documents\work\stock-prediction\train";
 
       //var symbols = new string[] { "amzn", "aapl", "tsla", "goog", "msft", "fb", "nflx", "baba", "yhoo" };
-      var symbols = new string[] {"znga"};
+      var symbols = new[] {"znga"};
       //var symbols = new string[] { "fb", "baba"};
       //var symbols = new string[] { "amzn" };
       var t = GetStocksHistories(symbols, start, end);
@@ -162,7 +172,8 @@ namespace StockHistoryScraper
       Console.WriteLine("Writing to files:");
       foreach (var p in histories)
       {
-        var fileName = string.Format("{0}-{1}-{2}.csv", p.Key, start.Year, end.Year);
+        var fileName =
+          string.Format("{0}-{1}-{2}.csv", p.Key, start.Year, end.Year);
         Console.WriteLine(fileName);
         using (var writer = new StreamWriter(Path.Combine(outDir, fileName)))
         {
@@ -179,8 +190,14 @@ namespace StockHistoryScraper
               e.Change = e.Close - e.Open;
               e.ChangePercent = e.Change / e.Open;
             }
+
             last = e;
-            writer.WriteLine("{0}{1}", e.ToCsv(), Math.Min(2, Math.Max(-2, e.ChangePercent < 0 ? Math.Floor(e.ChangePercent * 100.0) : Math.Ceiling(e.ChangePercent * 100.0))));
+            writer.WriteLine("{0}{1}", e.ToCsv(),
+              Math.Min(2,
+                Math.Max(-2,
+                  e.ChangePercent < 0
+                    ? Math.Floor(e.ChangePercent * 100.0)
+                    : Math.Ceiling(e.ChangePercent * 100.0))));
           }
         }
       }

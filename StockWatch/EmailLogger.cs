@@ -12,9 +12,9 @@ namespace StockWatch
     public IEnumerable<MailAddress> Subscribers { get; set; }
 
     public MailAddress From { get; set; }
-    
-    SmtpClient client;
-    ILogger backupLogger;
+
+    readonly SmtpClient client;
+    readonly ILogger backupLogger;
 
     public EmailLogger(ILogger backupLogger, MailAddress from = null, IEnumerable<MailAddress> subscribers = null)
     {
@@ -79,7 +79,7 @@ namespace StockWatch
 
     public void Info(string message, string title = null)
     {
-      Log(message, title, "Info");
+      Log(message, title);
     }
 
     public void Warn(string message, string title = null)

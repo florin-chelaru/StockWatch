@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace StockPredictor
 {
-  public interface IStockAdviser
+  public interface IStockAdvisor
   {
     Advice Predict(Ngram ngram);
 

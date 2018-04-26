@@ -1,10 +1,7 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace StockPredictor
 {
@@ -46,7 +43,7 @@ namespace StockPredictor
 
     public static Entry ParseCsv(string csv)
     {
-      var tokens = csv.Trim().Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+      var tokens = csv.Trim().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
       var e = new Entry
       {
@@ -78,7 +75,7 @@ namespace StockPredictor
     {
       using (var reader = new StreamReader(path))
       {
-        var entries = (from line in reader.ReadToEnd().Trim().Split('\n') select Entry.ParseCsv(line)).ToArray();
+        var entries = (from line in reader.ReadToEnd().Trim().Split('\n') select ParseCsv(line)).ToArray();
         entries[0].Change = entries[0].Close - entries[0].Open;
         entries[0].ChangePercent = entries[0].Change / entries[0].Open;
 

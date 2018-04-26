@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StockPredictor
 {
@@ -16,7 +13,7 @@ namespace StockPredictor
       State.Sep = ",";
       string sep = State.Sep;
       State.Size = 3;
-      State.HashFunction = (es) => string.Join(sep, from e in es select Math.Max(Math.Min((int)Math.Floor(e.ChangePercent * 100.0), 2), -2));
+      State.HashFunction = es => string.Join(sep, from e in es select Math.Max(Math.Min((int)Math.Floor(e.ChangePercent * 100.0), 2), -2));
 
       State[] states = new State[entries.Length - State.Size + 1];
       var counts = new Dictionary<string, int>();
@@ -43,13 +40,13 @@ namespace StockPredictor
       }
 
       // var freqs = counts.ToArray();
-      var freqs = (from c in counts select new KeyValuePair<string, double>(c.Key, (double)c.Value / (double)parentgramCounts[c.Key.Substring(0, c.Key.LastIndexOf(sep))])).ToArray();
+      var freqs = (from c in counts select new KeyValuePair<string, double>(c.Key, c.Value / (double)parentgramCounts[c.Key.Substring(0, c.Key.LastIndexOf(sep))])).ToArray();
       Array.Sort(freqs, (p1, p2) => p2.Value.CompareTo(p1.Value));
 
       foreach (var f in freqs)
       {
         //Console.WriteLine("{0}\t{1}", f.Key, (double)f.Value / (double)states.Length);
-        Console.WriteLine("{0},{1},{2}", f.Key, (double)f.Value, parentgramCounts[f.Key.Substring(0, f.Key.LastIndexOf(sep))]);
+        Console.WriteLine("{0},{1},{2}", f.Key, f.Value, parentgramCounts[f.Key.Substring(0, f.Key.LastIndexOf(sep))]);
       }
     }
 
@@ -60,7 +57,7 @@ namespace StockPredictor
       State.Sep = ",";
       string sep = State.Sep;
       State.Size = 4;
-      State.HashFunction = (es) => string.Join(sep, from e in es select Math.Max(Math.Min((int)Math.Floor(e.ChangePercent * 100.0), 2), -2));
+      State.HashFunction = es => string.Join(sep, from e in es select Math.Max(Math.Min((int)Math.Floor(e.ChangePercent * 100.0), 2), -2));
 
       State[] states = new State[entries.Length - State.Size + 1 - delay];
       var counts = new Dictionary<string, int>();
@@ -87,13 +84,13 @@ namespace StockPredictor
       }
 
       // var freqs = counts.ToArray();
-      var freqs = (from c in counts select new KeyValuePair<string, double>(c.Key, (double)c.Value / (double)parentgramCounts[c.Key.Substring(0, c.Key.LastIndexOf(sep))])).ToArray();
+      var freqs = (from c in counts select new KeyValuePair<string, double>(c.Key, c.Value / (double)parentgramCounts[c.Key.Substring(0, c.Key.LastIndexOf(sep))])).ToArray();
       Array.Sort(freqs, (p1, p2) => p2.Value.CompareTo(p1.Value));
 
       foreach (var f in freqs)
       {
         //Console.WriteLine("{0}\t{1}", f.Key, (double)f.Value / (double)states.Length);
-        Console.WriteLine("{0},{1},{2}", f.Key, (double)f.Value, parentgramCounts[f.Key.Substring(0, f.Key.LastIndexOf(sep))]);
+        Console.WriteLine("{0},{1},{2}", f.Key, f.Value, parentgramCounts[f.Key.Substring(0, f.Key.LastIndexOf(sep))]);
       }
     }
 
@@ -104,7 +101,7 @@ namespace StockPredictor
       State.Sep = ",";
       string sep = State.Sep;
       State.Size = 4;
-      State.HashFunction = (es) => string.Join(sep, from e in es select Math.Max(Math.Min((int)Math.Floor(e.ChangePercent * 100.0), 2), -2));
+      State.HashFunction = es => string.Join(sep, from e in es select Math.Max(Math.Min((int)Math.Floor(e.ChangePercent * 100.0), 2), -2));
 
       State[] states = new State[entries.Length - State.Size + 1];
       var counts = new Dictionary<string, int>();
@@ -140,7 +137,7 @@ namespace StockPredictor
       State.Sep = ",";
       string sep = State.Sep;
       State.Size = 4;
-      State.HashFunction = (es) => string.Join(sep, from e in es select Math.Max(Math.Min((int)Math.Floor(e.ChangePercent * 100.0), 2), -2));
+      State.HashFunction = es => string.Join(sep, from e in es select Math.Max(Math.Min((int)Math.Floor(e.ChangePercent * 100.0), 2), -2));
 
       State[] states = new State[entries.Length - State.Size + 1];
       var counts = new Dictionary<string, int>();
@@ -185,7 +182,7 @@ namespace StockPredictor
       State.Sep = ",";
       string sep = State.Sep;
       State.Size = 4;
-      State.HashFunction = (es) => string.Join(sep, from e in es select Math.Max(Math.Min((int)Math.Floor(e.ChangePercent * 100.0), 2), -2));
+      State.HashFunction = es => string.Join(sep, from e in es select Math.Max(Math.Min((int)Math.Floor(e.ChangePercent * 100.0), 2), -2));
 
       State[] states = new State[entries.Length - State.Size + 1];
       var counts = new Dictionary<string, int>();
@@ -237,7 +234,7 @@ namespace StockPredictor
       return extra;
     }
 
-    static void Simulation3(BuyAdviser adviser, Entry[] testEntries)
+    static void Simulation3(BuyAdvisor advisor, Entry[] testEntries)
     {
       // Test the trainer
       var analysis = false;
@@ -251,10 +248,10 @@ namespace StockPredictor
       var sellCountdown = 0;
       var emergencySellCountdown = 0;
       double error = 0.0;
-      for (var i = 0; i < testEntries.Length - adviser.NgramSize - 1; ++i)
+      for (var i = 0; i < testEntries.Length - advisor.NgramSize - 1; ++i)
       {
-        var es = new Entry[adviser.NgramSize];
-        for (var j = 0; j < adviser.NgramSize; ++j)
+        var es = new Entry[advisor.NgramSize];
+        for (var j = 0; j < advisor.NgramSize; ++j)
         {
           es[j] = testEntries[i + j];
 
@@ -263,9 +260,9 @@ namespace StockPredictor
         }
         var ngram = new Ngram(es);
 
-        var advice = adviser.Predict(ngram);
-        var next = testEntries[i + adviser.NgramSize];
-        var current = testEntries[i + adviser.NgramSize - 1];
+        var advice = advisor.Predict(ngram);
+        var next = testEntries[i + advisor.NgramSize];
+        var current = testEntries[i + advisor.NgramSize - 1];
         var dif = advice.Prediction - next.ChangePercent;
         error += dif * dif * 10000;
 
@@ -279,7 +276,7 @@ namespace StockPredictor
         --emergencySellCountdown;
         if (analysis) { Console.Write("{0},{1},", current.Date.ToShortDateString(), current.Close); }
 
-        if (advice.Prediction > 0.0 && advice.Confidence >= 30.0 / (adviser.Count - adviser.NgramSize) && totalInvested < maxInvestment)
+        if (advice.Prediction > 0.0 && advice.Confidence >= 30.0 / (advisor.Count - advisor.NgramSize) && totalInvested < maxInvestment)
         {
           // Buy!
           sellCountdown = delay;
@@ -348,13 +345,13 @@ namespace StockPredictor
         }
       }
 
-      error /= testEntries.Length - adviser.NgramSize - 1;
+      error /= testEntries.Length - advisor.NgramSize - 1;
 
       //Console.WriteLine("Error: {0}", error);
       Console.WriteLine("Total gain/loss: {0}", extra);
     }
 
-    static void Simulation4(BuyAdviser[] advisers, Entry[] testEntries, int ngramSize)
+    static void Simulation4(BuyAdvisor[] advisors, Entry[] testEntries, int ngramSize)
     {
       // Test the trainer
       var analysis = false;
@@ -380,7 +377,7 @@ namespace StockPredictor
         }
         var ngram = new Ngram(es);
 
-        var advices = from a in advisers select a.Predict(ngram);
+        var advices = from a in advisors select a.Predict(ngram);
         var advice = new Advice
         {
           Prediction = (from a in advices select a.Prediction).Average(),
@@ -477,7 +474,7 @@ namespace StockPredictor
       Console.WriteLine("Total gain/loss: {0}", extra);
     }
 
-    static void GenerateTestResults(BuyAdviser[] advisers, Entry[] testEntries, int ngramSize)
+    static void GenerateTestResults(BuyAdvisor[] advisors, Entry[] testEntries, int ngramSize)
     {
       for (var i = 0; i < testEntries.Length - ngramSize - 1; ++i)
       {
@@ -488,13 +485,13 @@ namespace StockPredictor
         }
         var ngram = new Ngram(es);
 
-        var advices = from a in advisers select a.Predict(ngram);
+        var advices = from a in advisors select a.Predict(ngram);
         var sumConfidence = (from a in advices select a.Confidence).Sum();
 
         var advice = new Advice
         {
           Prediction = (from a in advices select a.Prediction * a.Confidence / sumConfidence).Sum(),
-          Confidence = sumConfidence / advisers.Length
+          Confidence = sumConfidence / advisors.Length
         };
         var next = testEntries[i + ngramSize];
         var current = testEntries[i + ngramSize - 1];
@@ -503,12 +500,12 @@ namespace StockPredictor
       }
     }
 
-    static void PrintStats(BuyAdviser[] advisers)
+    static void PrintStats(BuyAdvisor[] advisors)
     {
       IDictionary<string, IDictionary<string, int>> ngramCounts = new SortedDictionary<string, IDictionary<string, int>>();
       IDictionary<string, int> parentCounts = new SortedDictionary<string, int>();
 
-      foreach (var adviser in advisers)
+      foreach (var adviser in advisors)
       {
         foreach (var pair in adviser.PredictionNgrams)
         {
@@ -546,7 +543,7 @@ namespace StockPredictor
       Console.WriteLine((from p in parentCounts select p.Value).Sum());
     }
 
-    static void Simulate5(CompositeAdviser adviser, IList<Entry> testEntries, int ngramSize)
+    static void Simulate5(CompositeAdvisor advisor, IList<Entry> testEntries, int ngramSize)
     {
       double threshold = 0.60;
       double totalPositives = 0.0;
@@ -562,7 +559,7 @@ namespace StockPredictor
         }
         var ngram = new Ngram(es);
 
-        var advice = adviser.Predict(ngram);
+        var advice = advisor.Predict(ngram);
         
         var next = testEntries[i + ngramSize];
         var current = testEntries[i + ngramSize - 1];
@@ -622,7 +619,7 @@ namespace StockPredictor
       //   new Tuple<string, string>("tsla", @"c:\Documents\work\stock-prediction\train\tsla-2010-2016.csv"),
       //   new Tuple<string, string>("yhoo", @"c:\Documents\work\stock-prediction\train\yhoo-2010-2016.csv")
       //};
-      var inputs = new Tuple<string, string>[]
+      var inputs = new[]
       {
          new Tuple<string, string>("aapl", @"c:\Documents\work\stock-prediction\train_old\aapl-2010-2014.csv"),
          new Tuple<string, string>("amzn", @"c:\Documents\work\stock-prediction\train_old\amzn-2010-2014.csv"),
@@ -634,10 +631,10 @@ namespace StockPredictor
          new Tuple<string, string>("tsla", @"c:\Documents\work\stock-prediction\train_old\tsla-2010-2014.csv"),
          new Tuple<string, string>("yhoo", @"c:\Documents\work\stock-prediction\train_old\yhoo-2010-2014.csv")
       };
-      var advisers = (from input in inputs select new BuyAdviser(input.Item1, Entry.FromCsvFile(input.Item2), ngramSize)).ToArray();
+      var advisers = (from input in inputs select new BuyAdvisor(input.Item1, Entry.FromCsvFile(input.Item2), ngramSize)).ToArray();
       //var adviser = new BuyAdviser(inputs[0].Item1, Entry.FromCsvFile(inputs[0].Item2), ngramSize);
       //var advisers = (from input in inputs select new BuyAdviser(input.Item1, Entry.FromCsvFile(input.Item2), ngramSize)).Take(2).ToArray();
-      var cAdviser = new CompositeAdviser(advisers, ngramSize);
+      var cAdviser = new CompositeAdvisor(advisers, ngramSize);
 
       var testEntries = Entry.FromCsvFile(@"c:\Documents\work\stock-prediction\test\amzn-2016-2016.csv");
 
