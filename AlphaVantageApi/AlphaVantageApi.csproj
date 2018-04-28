@@ -48,9 +48,12 @@
   <ItemGroup>
     <Compile Include="AlphaVantage.cs" />
     <Compile Include="AlphaVantageApiException.cs" />
+    <Compile Include="TimeseriesDailyResponse.cs" />
     <Compile Include="Intervals.cs" />
     <Compile Include="OutputSizes.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tick.cs" />
+    <Compile Include="TimeseriesIntradayResponse.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
