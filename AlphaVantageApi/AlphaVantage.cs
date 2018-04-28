@@ -87,7 +87,7 @@ namespace AlphaVantageApi
       public ImmutableDictionary<string, string> Metadata { get; }
       public ImmutableList<Tick> Timeseries { get; }
 
-      private readonly string prettyString;
+      private string prettyString;
       private readonly int hashCode;
 
       public TimeseriesIntradayResponse(string symbol, ImmutableDictionary<string, string> metadata,
@@ -98,7 +98,6 @@ namespace AlphaVantageApi
         Timeseries = timeseries;
 
         hashCode = GenerateHashCode();
-        prettyString = GeneratePrettyString();
       }
 
       public static TimeseriesIntradayResponse FromJson(string symbol, string json)
@@ -144,8 +143,7 @@ namespace AlphaVantageApi
         var code = -1422593982;
         code = code * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Symbol);
         code = code * -1521134295 +
-               EqualityComparer<ImmutableDictionary<string, string>>.Default.GetHashCode(
-                 Metadata);
+               EqualityComparer<ImmutableDictionary<string, string>>.Default.GetHashCode(Metadata);
         code = code * -1521134295 +
                EqualityComparer<ImmutableList<Tick>>.Default.GetHashCode(Timeseries);
         return code;
@@ -164,7 +162,7 @@ namespace AlphaVantageApi
 
       public override string ToString()
       {
-        return prettyString;
+        return prettyString ?? (prettyString = GeneratePrettyString());
       }
     }
 
