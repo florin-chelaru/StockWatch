@@ -216,7 +216,7 @@ namespace StockWatch
       try
       {
         var stockHistories =
-          new StockScraper(logger).GetCachedStocksHistories(symbols,
+          new GoogleAndYahooStockScraper(logger).GetCachedTimeseries(symbols,
             new DirectoryInfo(trainingDataDir));
         //var stockHistories = await new StockScraper(logger).GetStocksHistories(args, new DateTime(2010, 1, 1), DateTime.Now);
         //var stockHistories = await new StockScraper(logger).GetStocksHistories(args, new DateTime(2016, 1, 1), DateTime.Now);
@@ -236,7 +236,7 @@ namespace StockWatch
             try
             {
               recentHistory =
-                await new StockScraper(logger).GetStockSmallHistory(symbol,
+                await new GoogleAndYahooStockScraper(logger).GetSmallTimeseries(symbol,
                   startDay, yesterday);
             }
             catch (Exception ex)
@@ -277,7 +277,7 @@ namespace StockWatch
       logger.Info("Iterating");
 
       var quotes =
-        await new StockScraper(logger).GetRealTimeQuotes(stockManagers.Keys);
+        await new GoogleAndYahooStockScraper(logger).GetQuotes(stockManagers.Keys);
 
       foreach (var p in quotes)
       {

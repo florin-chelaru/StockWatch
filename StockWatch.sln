@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2015
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockWatch", "StockWatch\StockWatch.csproj", "{2E291624-61DC-47E4-9AEC-0F745CC083B1}"
 EndProject
@@ -10,6 +10,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockHistoryScraper", "StockHistoryScraper\StockHistoryScraper.csproj", "{384CB173-6695-4C03-911D-AC57ADD7AF74}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockPredictor", "StockPredictor\StockPredictor.csproj", "{E1096077-EEAE-4E3F-B68C-CD41058DF8E6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlphaVantageApi", "AlphaVantageApi\AlphaVantageApi.csproj", "{7B0327E8-DE5A-43DF-B7B3-F5EFE112928E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlphaVantageApiTests", "AlphaVantageApiTests\AlphaVantageApiTests.csproj", "{01A7DE3B-1F41-4BBF-9FB6-AB3B44BD33AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{E097A465-D783-4B1E-819C-703C3BFB7EED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,8 +39,23 @@ Global
 		{E1096077-EEAE-4E3F-B68C-CD41058DF8E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E1096077-EEAE-4E3F-B68C-CD41058DF8E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E1096077-EEAE-4E3F-B68C-CD41058DF8E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B0327E8-DE5A-43DF-B7B3-F5EFE112928E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B0327E8-DE5A-43DF-B7B3-F5EFE112928E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B0327E8-DE5A-43DF-B7B3-F5EFE112928E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B0327E8-DE5A-43DF-B7B3-F5EFE112928E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01A7DE3B-1F41-4BBF-9FB6-AB3B44BD33AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01A7DE3B-1F41-4BBF-9FB6-AB3B44BD33AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01A7DE3B-1F41-4BBF-9FB6-AB3B44BD33AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01A7DE3B-1F41-4BBF-9FB6-AB3B44BD33AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E097A465-D783-4B1E-819C-703C3BFB7EED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E097A465-D783-4B1E-819C-703C3BFB7EED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E097A465-D783-4B1E-819C-703C3BFB7EED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E097A465-D783-4B1E-819C-703C3BFB7EED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {56A34A66-728B-409D-993C-48A27114574E}
 	EndGlobalSection
 EndGlobal

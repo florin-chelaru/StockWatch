@@ -10,11 +10,11 @@ using StockPredictor;
 
 namespace StockWatch
 {
-  public class StockScraper
+  public class GoogleAndYahooStockScraper : IStockScraper
   {
     readonly ILogger logger;
 
-    public StockScraper(ILogger logger = null)
+    public GoogleAndYahooStockScraper(ILogger logger = null)
     {
       this.logger = logger ?? new ConsoleLogger();
     }
@@ -26,7 +26,7 @@ namespace StockWatch
     /// <param name="start"></param>
     /// <param name="end"></param>
     /// <returns></returns>
-    public async Task<IList<Entry>> GetStockSmallHistory(string symbol,
+    public async Task<IList<Entry>> GetSmallTimeseries(string symbol,
       DateTime start, DateTime end)
     {
       //var start = new DateTime(year, 1, 1);
@@ -98,7 +98,7 @@ namespace StockWatch
       }
     }
 
-    public async Task<IList<Entry>> GetStockYear(string symbol, int year)
+    public async Task<IList<Entry>> GetTimeseriesByYear(string symbol, int year)
     {
       var start = new DateTime(year, 1, 1);
       var end = new DateTime(year, 12, 31);
@@ -163,14 +163,14 @@ namespace StockWatch
       }
     }
 
-    public async Task<IList<Entry>> GetStockHistory(string symbol,
+    public async Task<IList<Entry>> GetTimeseries(string symbol,
       DateTime start, DateTime? end = null)
     {
       DateTime e = end ?? DateTime.Now;
       var startYear = start.Year;
       var endYear = e.Year;
 
-      List<Entry> all = new List<Entry>();
+      var all = new List<Entry>();
 
       for (var year = startYear; year <= endYear; ++year)
       {
@@ -180,7 +180,7 @@ namespace StockWatch
         {
           try
           {
-            var entries = await GetStockYear(symbol, year);
+            var entries = await GetTimeseriesByYear(symbol, year);
             all.AddRange(entries.Where(entry =>
               entry.Date >= start && entry.Date <= e));
             error = false;
@@ -208,13 +208,13 @@ namespace StockWatch
       return all;
     }
 
-    public async Task<IDictionary<string, IList<Entry>>> GetStocksHistories(
-      IEnumerable<string> symbols, DateTime start, DateTime? end = null)
+    public async Task<IDictionary<string, IList<Entry>>> GetTimeseries(
+      ICollection<string> symbols, DateTime start, DateTime? end = null)
     {
       var tasks = new Dictionary<string, Task<IList<Entry>>>();
       foreach (var symbol in symbols)
       {
-        tasks[symbol] = GetStockHistory(symbol, start, end);
+        tasks[symbol] = GetTimeseries(symbol, start, end);
       }
 
       IDictionary<string, IList<Entry>> ret =
@@ -227,8 +227,8 @@ namespace StockWatch
       return ret;
     }
 
-    public IDictionary<string, IList<Entry>> GetCachedStocksHistories(
-      IEnumerable<string> symbols, DirectoryInfo inDir)
+    public IDictionary<string, IList<Entry>> GetCachedTimeseries(
+      ICollection<string> symbols, DirectoryInfo inDir)
     {
       IDictionary<string, IList<Entry>> histories =
         new Dictionary<string, IList<Entry>>();
@@ -249,7 +249,7 @@ namespace StockWatch
       return histories;
     }
 
-    public async Task<Entry> GetRealTimeQuote(string symbol,
+    public async Task<Entry> GetQuote(string symbol,
       string market = "nasdaq")
     {
       var webReq = WebRequest.Create(string.Format(
@@ -262,20 +262,20 @@ namespace StockWatch
         {
           var text = reader.ReadToEnd().Replace("//", "").Trim();
           var obj = JArray.Parse(text);
-          StockQuote quote = obj[0].ToObject<StockQuote>();
+          GoogleStockQuote quote = obj[0].ToObject<GoogleStockQuote>();
 
           return quote.ToEntry();
         }
       }
     }
 
-    public async Task<IDictionary<string, Entry>> GetRealTimeQuotes(
-      IEnumerable<string> symbols, string market = "nasdaq")
+    public async Task<IDictionary<string, Entry>> GetQuotes(
+      ICollection<string> symbols, string market = "nasdaq")
     {
       var tasks = new Dictionary<string, Task<Entry>>();
       foreach (var symbol in symbols)
       {
-        tasks[symbol] = GetRealTimeQuote(symbol, market);
+        tasks[symbol] = GetQuote(symbol, market);
       }
 
       var ret = new Dictionary<string, Entry>();

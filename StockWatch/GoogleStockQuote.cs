@@ -4,7 +4,7 @@ using StockPredictor;
 
 namespace StockWatch
 {
-  class StockQuote
+  class GoogleStockQuote
   {
     [JsonProperty("t")]
     public string Symbol { get; set; }
