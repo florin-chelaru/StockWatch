@@ -26,17 +26,14 @@ namespace StockWatchConsole
         db.StockQuoteIntervals.Add(new StockQuoteInterval
         {
           Symbol = "testsymbol",
-          Market = "testmarket",
-          CollectionFunction = "TEST",
+          CollectionFunction = CollectionFunction.Test,
           Open = 10.0m,
           Close = 20.0m,
           High = 25.0m,
           Low = 5.0m,
           Volume = 100L,
           StartTime = DateTime.Parse("2018-04-28 9:00:00"),
-          EndTime = DateTime.Parse("2018-04-28 16:00:00"),
-          CreatedAt = DateTimeOffset.UtcNow,
-          UpdatedAt = DateTimeOffset.UtcNow
+          EndTime = DateTime.Parse("2018-04-28 16:00:00")
         });
         db.SaveChanges();
       }

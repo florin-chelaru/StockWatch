@@ -21,6 +21,8 @@ Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "StockWatchDb", "StockWatchD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockWatchData", "StockWatchData\StockWatchData.csproj", "{604E59CC-BF85-45F1-9BB2-6D03379BC093}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonTests", "CommonTests\CommonTests.csproj", "{A6D334CF-23F4-431B-8A05-2E4B28116381}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -65,6 +67,10 @@ Global
 		{604E59CC-BF85-45F1-9BB2-6D03379BC093}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{604E59CC-BF85-45F1-9BB2-6D03379BC093}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{604E59CC-BF85-45F1-9BB2-6D03379BC093}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6D334CF-23F4-431B-8A05-2E4B28116381}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6D334CF-23F4-431B-8A05-2E4B28116381}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6D334CF-23F4-431B-8A05-2E4B28116381}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6D334CF-23F4-431B-8A05-2E4B28116381}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

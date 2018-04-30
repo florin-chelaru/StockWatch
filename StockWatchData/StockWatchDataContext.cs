@@ -15,19 +15,19 @@ namespace StockWatchData
     {
       modelBuilder.Entity<StockQuoteInterval>()
           .Property(e => e.Open)
-          .HasPrecision(19, 4);
+          .HasPrecision(9, 2);
 
       modelBuilder.Entity<StockQuoteInterval>()
           .Property(e => e.Close)
-          .HasPrecision(19, 4);
+          .HasPrecision(9, 2);
 
       modelBuilder.Entity<StockQuoteInterval>()
           .Property(e => e.High)
-          .HasPrecision(19, 4);
+          .HasPrecision(9, 2);
 
       modelBuilder.Entity<StockQuoteInterval>()
           .Property(e => e.Low)
-          .HasPrecision(19, 4);
+          .HasPrecision(9, 2);
     }
   }
 }
