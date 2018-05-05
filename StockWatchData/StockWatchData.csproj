@@ -49,10 +49,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CollectionFunction.cs" />
+    <Compile Include="DailyQuote.cs" />
+    <Compile Include="Group.cs" />
+    <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="StockQuoteInterval.cs" />
     <Compile Include="StockWatchDataContext.cs" />
+    <Compile Include="Symbol.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.Config" />

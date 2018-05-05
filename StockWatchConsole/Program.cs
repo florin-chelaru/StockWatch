@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using StockWatchData;
 
 namespace StockWatchConsole
@@ -23,19 +24,52 @@ namespace StockWatchConsole
 //      StockWatchDb db;
       using (var db = new StockWatchDataContext())
       {
-        db.StockQuoteIntervals.Add(new StockQuoteInterval
+//        db.StockQuoteIntervals.Add(new StockQuoteInterval
+//        {
+//          Symbol = "testsymbol",
+//          CollectionFunction = CollectionFunction.Test,
+//          Open = 10.0m,
+//          Close = 20.0m,
+//          High = 25.0m,
+//          Low = 5.0m,
+//          Volume = 100L,
+//          StartTime = DateTime.Parse("2018-04-28 9:00:00"),
+//          EndTime = DateTime.Parse("2018-04-28 16:00:00")
+//        });
+//        db.SaveChanges();
+//      
+        var nasdaq = (from g in db.Groups where g.Id == "nasdaq" select g).FirstOrDefault() ??
+                     new Group {Id = "nasdaq"};
+        var msft =
+          (from symbol in db.Symbols where symbol.Id == "msft" select symbol).FirstOrDefault() ??
+          new Symbol {Id = "msft", Groups = {nasdaq}};
+
+        var myQuote = (from quote in msft.DailyQuotes where quote.Day == "2018-05-04" select quote)
+          .FirstOrDefault();
+        if (myQuote == null)
         {
-          Symbol = "testsymbol",
-          CollectionFunction = CollectionFunction.Test,
-          Open = 10.0m,
-          Close = 20.0m,
-          High = 25.0m,
-          Low = 5.0m,
-          Volume = 100L,
-          StartTime = DateTime.Parse("2018-04-28 9:00:00"),
-          EndTime = DateTime.Parse("2018-04-28 16:00:00")
-        });
-        db.SaveChanges();
+          msft.DailyQuotes.Add(myQuote = new DailyQuote
+          {
+            Day = "2018-05-04",
+            Open = 10.0m,
+            Close = 20.0m,
+            High = 25.55m,
+            Low = 5.23m,
+            Volume = 100L,
+            OpenChangePercent = 1.23m,
+            CloseChangePercent = 2.43m,
+            HighChangePercent = 4.21m,
+            LowChangePercent = -1.33m,
+            VolumeChangePercent = -8.75m,
+            CollectionFunction = "Test",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow
+          });
+          db.SaveChanges();
+        }
+
+        Console.WriteLine(myQuote);
+        Console.WriteLine(myQuote.Date);
       }
     }
   }
