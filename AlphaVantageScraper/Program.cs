@@ -77,7 +77,7 @@ namespace AlphaVantageScraper
 
     static void Main(string[] args)
     {
-//      var task =  Scrape("R2EG5NSK04HQELIU", new[] { "msft" });
+//      var task =  Scrape("", new[] { "msft" });
 //      task.Wait();
     }
   }
