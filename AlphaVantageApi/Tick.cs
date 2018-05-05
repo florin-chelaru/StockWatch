@@ -7,13 +7,13 @@ namespace AlphaVantageApi
   public sealed class Tick
   {
     public DateTime Time { get; }
-    public double Open { get; }
-    public double Close { get; }
-    public double High { get; }
-    public double Low { get; }
+    public decimal Open { get; }
+    public decimal Close { get; }
+    public decimal High { get; }
+    public decimal Low { get; }
     public ulong Volume { get; }
 
-    public Tick(DateTime time, double open, double close, double high, double low, ulong volume)
+    public Tick(DateTime time, decimal open, decimal close, decimal high, decimal low, ulong volume)
     {
       Time = time;
       Open = open;
@@ -33,8 +33,8 @@ namespace AlphaVantageApi
       string low = ExtractValue(jTick, "low");
       string volume = ExtractValue(jTick, "volume");
 
-      return new Tick(DateTime.Parse(time), double.Parse(open), double.Parse(close),
-        double.Parse(high), double.Parse(low), ulong.Parse(volume));
+      return new Tick(DateTime.Parse(time), decimal.Parse(open), decimal.Parse(close),
+        decimal.Parse(high), decimal.Parse(low), ulong.Parse(volume));
     }
 
     private static string ExtractValue(JObject jTick, string filter)
@@ -45,8 +45,8 @@ namespace AlphaVantageApi
       }
 
       return (from property in jTick.Properties()
-              where property.Name.Contains(filter)
-              select (property.Value as JValue)?.Value.ToString()).FirstOrDefault() ??
+               where property.Name.Contains(filter)
+               select (property.Value as JValue)?.Value.ToString()).FirstOrDefault() ??
              string.Empty;
     }
 
@@ -54,10 +54,10 @@ namespace AlphaVantageApi
     {
       return obj is Tick tick &&
              Time == tick.Time &&
-             Math.Abs(Open - tick.Open) < double.Epsilon &&
-             Math.Abs(Close - tick.Close) < double.Epsilon &&
-             Math.Abs(High - tick.High) < double.Epsilon &&
-             Math.Abs(Low - tick.Low) < double.Epsilon &&
+             Open == tick.Open &&
+             Close == tick.Close &&
+             High == tick.High &&
+             Low == tick.Low &&
              Volume == tick.Volume;
     }
 

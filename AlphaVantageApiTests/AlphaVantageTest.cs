@@ -31,8 +31,8 @@ namespace AlphaVantageApi
         new Dictionary<string, string> {{"2. Symbol", "MSFT"}}.ToImmutableDictionary();
       var expectedTimeseries = new List<Tick>
       {
-        new Tick(DateTime.Parse("2018-04-26 16:00:00"), 94.59, 94.26, 94.63, 94.17, 5988325),
-        new Tick(DateTime.Parse("2018-04-26 15:59:00"), 94.69, 94.60, 94.71, 94.57, 305727)
+        new Tick(DateTime.Parse("2018-04-26 16:00:00"), 94.59m, 94.26m, 94.63m, 94.17m, 5988325),
+        new Tick(DateTime.Parse("2018-04-26 15:59:00"), 94.69m, 94.60m, 94.71m, 94.57m, 305727)
       }.ToImmutableList();
 
       var expectedResponse =
@@ -68,8 +68,8 @@ namespace AlphaVantageApi
       
       var expectedTimeseries = new List<Tick>
       {
-        new Tick(DateTime.Parse("2018-04-26"), 93.55, 94.26, 95.15, 93.10, 41044569),
-        new Tick(DateTime.Parse("2018-04-25"), 93.30, 92.31, 93.30, 90.28, 33729257)
+        new Tick(DateTime.Parse("2018-04-26"), 93.55m, 94.26m, 95.15m, 93.10m, 41044569),
+        new Tick(DateTime.Parse("2018-04-25"), 93.30m, 92.31m, 93.30m, 90.28m, 33729257)
       }.ToImmutableList();
 
       var expectedResponse =
