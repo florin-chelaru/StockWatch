@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="AlphaVantage.cs" />
     <Compile Include="AlphaVantageApiException.cs" />
+    <Compile Include="IAlphaVantage.cs" />
     <Compile Include="TimeseriesDailyResponse.cs" />
     <Compile Include="Intervals.cs" />
     <Compile Include="OutputSizes.cs" />

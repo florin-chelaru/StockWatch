@@ -4,11 +4,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("AlphaVantageScraper")]
+[assembly: AssemblyTitle("AlphaVantageScraperTests")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("AlphaVantageScraper")]
+[assembly: AssemblyProduct("AlphaVantageScraperTests")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -19,7 +19,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("2f31f130-7ad9-47b6-8f3a-b6ae0e88b308")]
+[assembly: Guid("48edafb6-a78c-4622-8a64-a7539426d086")]
 
 // Version information for an assembly consists of the following four values:
 //

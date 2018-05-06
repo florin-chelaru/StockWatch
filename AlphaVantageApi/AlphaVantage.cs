@@ -7,7 +7,7 @@ using Common;
 
 namespace AlphaVantageApi
 {
-  public class AlphaVantage
+  public class AlphaVantage : IAlphaVantage
   {
     private const string ApiUrl = "https://www.alphavantage.co";
     private const string ApiKeyArg = "apikey";

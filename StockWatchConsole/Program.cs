@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
-using StockWatchData;
+using Microsoft.EntityFrameworkCore;
+using StockWatchData.Models;
 
 namespace StockWatchConsole
 {
@@ -39,34 +40,44 @@ namespace StockWatchConsole
 //        db.SaveChanges();
 //      
         var nasdaq = (from g in db.Groups where g.Id == "nasdaq" select g).FirstOrDefault() ??
-                     new Group {Id = "nasdaq"};
-        var msft =
-          (from symbol in db.Symbols where symbol.Id == "msft" select symbol).FirstOrDefault() ??
-          new Symbol {Id = "msft", Groups = {nasdaq}};
+                     db.Groups.Add(new Group {Id = "nasdaq"}).Entity;
 
-        var myQuote = (from quote in msft.DailyQuotes where quote.Day == "2018-05-04" select quote)
-          .FirstOrDefault();
-        if (myQuote == null)
-        {
-          msft.DailyQuotes.Add(myQuote = new DailyQuote
-          {
-            Day = "2018-05-04",
-            Open = 10.0m,
-            Close = 20.0m,
-            High = 25.55m,
-            Low = 5.23m,
-            Volume = 100L,
-            OpenChangePercent = 1.23m,
-            CloseChangePercent = 2.43m,
-            HighChangePercent = 4.21m,
-            LowChangePercent = -1.33m,
-            VolumeChangePercent = -8.75m,
-            CollectionFunction = "Test",
-            CreatedAt = DateTimeOffset.UtcNow,
-            UpdatedAt = DateTimeOffset.UtcNow
-          });
-          db.SaveChanges();
-        }
+        var msft =
+          (from symbol in db.Symbols.Include(symbol => symbol.DailyQuotes)
+            where symbol.Id == "msft"
+            select symbol).FirstOrDefault() ?? db.Symbols.Add(new Symbol {Id = "msft"}).Entity;
+
+        var membership =
+          (from m in db.SymbolGroupMemberships
+            where m.Symbol == msft.Id && m.Group == nasdaq.Id
+            select m).FirstOrDefault() ??
+          db.SymbolGroupMemberships
+            .Add(new SymbolGroupMembership {Symbol = msft.Id, Group = nasdaq.Id}).Entity;
+
+        var myQuote = (from quote in msft.DailyQuotes
+                        where quote.Day == "2018-05-04"
+                        select quote)
+                      .FirstOrDefault() ??
+                      db.DailyQuotes.Add(new DailyQuote
+                      {
+                        Symbol = msft.Id,
+                        Day = "2018-05-04",
+                        Open = 10.0m,
+                        Close = 20.0m,
+                        High = 25.55m,
+                        Low = 5.23m,
+                        Volume = 100L,
+                        OpenChangePercent = 1.23m,
+                        CloseChangePercent = 2.43m,
+                        HighChangePercent = 4.21m,
+                        LowChangePercent = -1.33m,
+                        VolumeChangePercent = -8.75m,
+                        CollectionFunction = "Test",
+                        CreatedAt = DateTimeOffset.UtcNow,
+                        UpdatedAt = DateTimeOffset.UtcNow
+                      }).Entity;
+        db.SaveChanges();
+
 
         Console.WriteLine(myQuote);
         Console.WriteLine(myQuote.Date);
