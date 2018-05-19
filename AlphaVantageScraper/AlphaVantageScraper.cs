@@ -24,7 +24,7 @@ namespace AlphaVantageScraper
 
     private async Task UpdateDatabase(TimeseriesDailyResponse response)
     {
-      var db = DataContextFactory.CreateDataContext();
+      var db = DataContextFactory.DataContext;
       //using (var db = DataContextFactory.CreateDataContext())
       //{
         var symbolObj =
@@ -82,8 +82,6 @@ namespace AlphaVantageScraper
       quotes.Where(quote => quote.Date > latestDate).Select(quote => quote).ToList()
         .ForEach(quote => db.DailyQuotes.Add(quote));
       await db.SaveChangesAsync();
-
-      var symbols = db.Symbols.ToList();
       //}
     }
 

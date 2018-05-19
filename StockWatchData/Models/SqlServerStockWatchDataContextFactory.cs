@@ -2,9 +2,8 @@
 {
   public class SqlServerStockWatchDataContextFactory : IStockWatchDataContextFactory
   {
-    public StockWatchDataContext CreateDataContext()
-    {
-      return new StockWatchDataContext();
-    }
+    private static readonly StockWatchDataContext SqlServerDataContext = new StockWatchDataContext();
+
+    public StockWatchDataContext DataContext => SqlServerDataContext;
   }
 }

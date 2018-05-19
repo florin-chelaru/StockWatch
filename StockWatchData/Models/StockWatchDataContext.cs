@@ -11,6 +11,7 @@ namespace StockWatchData.Models
 
     public StockWatchDataContext()
     {
+      
     }
 
     public StockWatchDataContext(DbContextOptions<StockWatchDataContext> options)
