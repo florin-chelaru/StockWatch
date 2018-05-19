@@ -31,25 +31,6 @@ namespace StockWatchData.Models
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-      // TODO: Check whether this is needed
-//      var dbSets = GetType().GetProperties()
-//        .Where(p => p.PropertyType.Name == "DbSet`1")
-//        .Select(p => new
-//        {
-//          PropertyName = p.Name,
-//          EntityType = p.PropertyType.GenericTypeArguments.Single()
-//        })
-//        .ToArray();
-//
-//      foreach (var type in modelBuilder.Model.GetEntityTypes())
-//      {
-//        var dbset = dbSets.SingleOrDefault(s => s.EntityType == type.ClrType);
-//        if (dbset != null)
-//        {
-//          type.Relational().TableName = dbset.PropertyName;
-//        }
-//      }
-
       modelBuilder.Entity<DailyQuote>(entity =>
       {
         entity.HasKey(e => new {e.Symbol, e.Day});
@@ -113,7 +94,6 @@ namespace StockWatchData.Models
           .ValueGeneratedNever();
 
         entity.Property(e => e.Market).HasMaxLength(50);
-//        entity.HasMany(e => e.DailyQuotes).WithOne();
       });
     }
   }

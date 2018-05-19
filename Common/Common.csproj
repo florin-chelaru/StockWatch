@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DateTimeUtil.cs" />
+    <Compile Include="NumberUtil.cs" />
     <Compile Include="EqualityUtil.cs" />
     <Compile Include="IWebRequestFactory.cs" />
     <Compile Include="IWebResponse.cs" />

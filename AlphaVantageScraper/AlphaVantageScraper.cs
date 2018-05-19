@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AlphaVantageApi;
+using Common;
 using Microsoft.EntityFrameworkCore;
 using StockWatchData.Models;
 
@@ -14,7 +15,8 @@ namespace AlphaVantageScraper
 
     private IStockWatchDataContextFactory DataContextFactory { get; }
 
-    public AlphaVantageScraper(IAlphaVantage alphaVantageApi, IStockWatchDataContextFactory dataContextFactory)
+    public AlphaVantageScraper(IAlphaVantage alphaVantageApi,
+      IStockWatchDataContextFactory dataContextFactory)
     {
       AlphaVantageApi = alphaVantageApi;
       DataContextFactory = dataContextFactory;
@@ -22,10 +24,11 @@ namespace AlphaVantageScraper
 
     private async Task UpdateDatabase(TimeseriesDailyResponse response)
     {
-      using (var db = DataContextFactory.CreateDataContext())
-      {
+      var db = DataContextFactory.CreateDataContext();
+      //using (var db = DataContextFactory.CreateDataContext())
+      //{
         var symbolObj =
-          (from symbol in db.Symbols.Include(s => s.DailyQuotes)
+          (from symbol in db.Symbols
             where symbol.Id == response.Symbol
             select symbol)
           .FirstOrDefault();
@@ -34,16 +37,18 @@ namespace AlphaVantageScraper
           db.Symbols.Add(symbolObj = new Symbol {Id = response.Symbol});
         }
 
-        DateTime? maxDate = DateTime.MinValue;
-        if (symbolObj.DailyQuotes?.Any() ?? false)
-        {
-          maxDate = symbolObj.DailyQuotes.Max(quote => quote.Date);
-        }
+        var latestDay = (from quote in db.DailyQuotes
+          where quote.Symbol == response.Symbol
+          select quote.Day).Max();
+        DateTime latestDate = string.IsNullOrEmpty(latestDay)
+          ? DateTime.MinValue
+          : DateTime.Parse(latestDay);
 
         var quotes = (from tick in response.Timeseries
-          where tick.Time > maxDate
+          where tick.Time >= latestDate
           select new DailyQuote
           {
+            Symbol = response.Symbol,
             Day = tick.Time.ToString("yyyy-MM-dd"),
             Date = tick.Time,
             Open = tick.Open,
@@ -65,16 +70,21 @@ namespace AlphaVantageScraper
           var today = quotes[i];
           var yesterday = quotes[i - 1];
 
-          today.OpenChangePercent = (today.Open / yesterday.Open) * 100m - 100m;
-          today.CloseChangePercent = (today.Close / yesterday.Close) * 100m - 100m;
-          today.HighChangePercent = (today.High / yesterday.High) * 100m - 100m;
-          today.LowChangePercent = (today.Low / yesterday.Low) * 100m - 100m;
-          today.VolumeChangePercent = ((decimal) today.Volume / yesterday.Volume) * 100m - 100m;
+          today.OpenChangePercent = today.Open.ComputeChangeRatio(yesterday.Open);
+          today.CloseChangePercent = today.Close.ComputeChangeRatio(yesterday.Close);
+          today.HighChangePercent = today.High.ComputeChangeRatio(yesterday.High);
+          today.LowChangePercent = today.Low.ComputeChangeRatio(yesterday.Low);
+          today.VolumeChangePercent = ((decimal) today.Volume).ComputeChangeRatio(yesterday.Volume);
         }
 
-        quotes.ForEach(quote => symbolObj.DailyQuotes.Add(quote));
-        await db.SaveChangesAsync();
-      }
+      //        quotes.Where(quote => quote.Date > latestDate).Select(quote => quote).ToList()
+      //          .ForEach(quote => symbolObj.DailyQuotes.Add(quote));
+      quotes.Where(quote => quote.Date > latestDate).Select(quote => quote).ToList()
+        .ForEach(quote => db.DailyQuotes.Add(quote));
+      await db.SaveChangesAsync();
+
+      var symbols = db.Symbols.ToList();
+      //}
     }
 
     public async Task Scrape(IEnumerable<string> symbols)

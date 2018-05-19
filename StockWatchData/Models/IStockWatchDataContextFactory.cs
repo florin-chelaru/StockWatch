@@ -1,4 +1,6 @@
-﻿namespace StockWatchData.Models
+﻿using System;
+
+namespace StockWatchData.Models
 {
   public interface IStockWatchDataContextFactory
   {
