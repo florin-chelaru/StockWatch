@@ -1,4 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Collections.Generic;
+using System.Data.Entity.ModelConfiguration.Configuration;
+using System.Linq;
+using System.Runtime.Remoting;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace StockWatchData.Models
 {
@@ -11,7 +16,6 @@ namespace StockWatchData.Models
 
     public StockWatchDataContext()
     {
-      
     }
 
     public StockWatchDataContext(DbContextOptions<StockWatchDataContext> options)
@@ -40,7 +44,12 @@ namespace StockWatchData.Models
 
         entity.Property(e => e.Day).HasMaxLength(50);
 
-        entity.Property(e => e.CloseChangePercent).HasColumnType("decimal(18, 3)");
+        entity.Property(e => e.Open).HasColumnType("decimal(18, 5)");
+        entity.Property(e => e.Close).HasColumnType("decimal(18, 5)");
+        entity.Property(e => e.High).HasColumnType("decimal(18, 5)");
+        entity.Property(e => e.Low).HasColumnType("decimal(18, 5)");
+
+        entity.Property(e => e.CloseChangePercent).HasColumnType("decimal(18, 5)");
 
         entity.Property(e => e.CollectionFunction).HasMaxLength(50);
 
@@ -48,13 +57,13 @@ namespace StockWatchData.Models
           .HasColumnType("datetime")
           .HasComputedColumnSql("(CONVERT([datetime],[Day],(120)))");
 
-        entity.Property(e => e.HighChangePercent).HasColumnType("decimal(18, 3)");
+        entity.Property(e => e.HighChangePercent).HasColumnType("decimal(18, 5)");
 
-        entity.Property(e => e.LowChangePercent).HasColumnType("decimal(18, 3)");
+        entity.Property(e => e.LowChangePercent).HasColumnType("decimal(18, 5)");
 
-        entity.Property(e => e.OpenChangePercent).HasColumnType("decimal(18, 3)");
+        entity.Property(e => e.OpenChangePercent).HasColumnType("decimal(18, 5)");
 
-        entity.Property(e => e.VolumeChangePercent).HasColumnType("decimal(18, 3)");
+        entity.Property(e => e.VolumeChangePercent).HasColumnType("decimal(18, 5)");
 
         entity.HasOne(d => d.SymbolNavigation)
           .WithMany(p => p.DailyQuotes)
@@ -96,6 +105,38 @@ namespace StockWatchData.Models
 
         entity.Property(e => e.Market).HasMaxLength(50);
       });
+    }
+
+    public async Task<TEntity> RemoveIfExistsAsync<TEntity>(params object[] keyValues)
+      where TEntity : class
+    {
+      var entity = await FindAsync<TEntity>(keyValues);
+      if (entity == null)
+      {
+        return null;
+      }
+
+      Remove(entity);
+      return entity;
+    }
+
+    public TEntity RemoveIfExists<TEntity>(params object[] key) where TEntity : class
+    {
+      return RemoveIfExistsAsync<TEntity>(key).Result;
+    }
+
+    public void RemoveRangeIfExists<TEntity>(ICollection<object[]> keys) where TEntity : class
+    {
+      foreach (var key in keys)
+      {
+        RemoveIfExists<TEntity>(key);
+      }
+    }
+
+    public void RemoveRangeIfExists(ICollection<DailyQuote> quotes)
+    {
+      var keys = (from quote in quotes select new object[] {quote.Symbol, quote.Day}).ToList();
+      RemoveRangeIfExists<DailyQuote>(keys);
     }
   }
 }

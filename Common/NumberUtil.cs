@@ -10,6 +10,10 @@ namespace Common
   {
     public static decimal ComputeChangeRatio(this decimal current, decimal previous, int roundTo = 5)
     {
+      if (previous == 0m)
+      {
+        return 1m;
+      }
       return decimal.Round(current / previous - 1m, roundTo);
     }
   }

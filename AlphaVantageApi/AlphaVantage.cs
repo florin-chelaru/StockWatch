@@ -22,6 +22,11 @@ namespace AlphaVantageApi
     private readonly string apiKey;
     private readonly IWebRequestFactory webRequestFactory;
 
+    public AlphaVantage(string apiKey)
+      : this(apiKey, new WebRequestFactory())
+    {
+    }
+
     public AlphaVantage(string apiKey, IWebRequestFactory webRequestFactory)
     {
       this.apiKey = apiKey;
@@ -41,7 +46,8 @@ namespace AlphaVantageApi
       return TimeseriesIntradayResponse.FromJson(symbol, json);
     }
 
-    public async Task<TimeseriesDailyResponse> TimeseriesDaily(string symbol, string outputSize = OutputSizes.Compact)
+    public async Task<TimeseriesDailyResponse> TimeseriesDaily(string symbol,
+      string outputSize = OutputSizes.Compact)
     {
       var args = ImmutableDictionary.CreateBuilder<string, string>();
       args[ApiKeyArg] = apiKey;

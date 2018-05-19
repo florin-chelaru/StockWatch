@@ -21,13 +21,9 @@ namespace AlphaVantageScraper
   {
     #region Fields
 
-    private const string Msft = "msft";
-    private static readonly TimeseriesDailyResponse TimeseriesDailyResponse = CreateDailyResponse();
-
     private static readonly ImmutableList<DailyQuote> DailyQuotes = ImmutableList.Create(
       new DailyQuote
       {
-        Symbol = Msft,
         Day = "2018-04-26",
         Date = DateTime.Parse("2018-04-26"),
         Open = 93.55m,
@@ -44,7 +40,6 @@ namespace AlphaVantageScraper
       },
       new DailyQuote
       {
-        Symbol = Msft,
         Day = "2018-04-25",
         Date = DateTime.Parse("2018-04-25"),
         Open = 93.30m,
@@ -60,140 +55,62 @@ namespace AlphaVantageScraper
         CollectionFunction = "TIME_SERIES_DAILY"
       });
 
-    private Symbol symbol = new Symbol
-    {
-      Id = Msft,
-      DailyQuotes = DailyQuotes
-    };
-
     #endregion
 
     private DbConnection dbConnection;
-    private DbContextOptions<StockWatchDataContext> dbOptions;
+    
     private Mock<IAlphaVantage> alphaVantageApi;
     private Mock<IStockWatchDataContextFactory> dataContextFactory;
-    private ServiceProvider serviceProvider;
-    private IServiceScope scope;
+    private StockWatchDataContext db;
 
     private AlphaVantageScraper scraper;
 
-//    [SetUp]
-//    public void SetUp()
-//    {
-//      symbol = new Symbol { Id = Msft, DailyQuotes = DailyQuotes };
-//
-//      // In-memory database only exists while the connection is open
-//      dbConnection = new SqliteConnection("DataSource=:memory:");
-//      dbConnection.Open();
-//
-//      dbOptions = new DbContextOptionsBuilder<StockWatchDataContext>()
-//        .UseSqlite(dbConnection)
-//        .EnableSensitiveDataLogging()
-//        .Options;
-//
-//      // Create the schema in the database
-//      using (var context = CreateDataContext())
-//      {
-//        context.Database.EnsureCreated();
-//      }
-//
-//      alphaVantageApi = new Mock<IAlphaVantage>();
-//      alphaVantageApi.Setup(api => api.TimeseriesDaily(Msft, OutputSizes.Full))
-//        .Returns(Task.FromResult(TimeseriesDailyResponse));
-//
-//      dataContextFactory = new Mock<IStockWatchDataContextFactory>();
-//      dataContextFactory.Setup(factory => factory.CreateDataContext())
-//        .Returns(CreateDataContext);
-//
-//      scraper = new AlphaVantageScraper(alphaVantageApi.Object, dataContextFactory.Object);
-//    }
+    private string symbolId;
+    private Symbol symbol;
 
     [SetUp]
     public void SetUp()
     {
-//      string dbName = Guid.NewGuid().ToString();
-      serviceProvider = new ServiceCollection()
-        .AddEntityFrameworkInMemoryDatabase()
-        .AddDbContext<StockWatchDataContext>(options => options.EnableSensitiveDataLogging().UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking).UseInMemoryDatabase(Guid.NewGuid().ToString()))
-//        .AddEntityFrameworkSqlite()
-//        .AddDbContext<StockWatchDataContext>(options => options.UseSqlite("DataSource=:memory:"))
-        .BuildServiceProvider();
-      scope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+      symbolId = Guid.NewGuid().ToString();
+      DailyQuotes.ForEach(q => q.Symbol = symbolId);
+      symbol = new Symbol {Id = symbolId, DailyQuotes = DailyQuotes};
 
+      dbConnection = new SqliteConnection("DataSource=:memory:");
+      dbConnection.Open();
+      var dbOptions = new DbContextOptionsBuilder<StockWatchDataContext>()
+        .UseSqlite(dbConnection)
+        .EnableSensitiveDataLogging()
+        .Options;
 
       // Create the schema in the database
-//      using (var db = CreateDataContext())
-//      {
-//        db.Database.EnsureCreated();
-//      }
-      var db = CreateDataContext();
-//      db.Database.OpenConnection();
-      db.Database.EnsureDeleted();
+      db = new StockWatchDataContext(dbOptions);
       db.Database.EnsureCreated();
-      db.SaveChanges();
 
       alphaVantageApi = new Mock<IAlphaVantage>();
-      alphaVantageApi.Setup(api => api.TimeseriesDaily(Msft, OutputSizes.Full))
-        .Returns(Task.FromResult(TimeseriesDailyResponse));
+      alphaVantageApi.Setup(api => api.TimeseriesDaily(symbolId, OutputSizes.Full))
+        .Returns(Task.FromResult(CreateDailyResponse()));
 
       dataContextFactory = new Mock<IStockWatchDataContextFactory>();
-      dataContextFactory.Setup(factory => factory.DataContext)
-        .Returns(CreateDataContext);
+      dataContextFactory.Setup(factory => factory.DataContext).Returns(db);
 
       scraper = new AlphaVantageScraper(alphaVantageApi.Object, dataContextFactory.Object);
     }
 
-//    [TearDown]
-//    public void TearDown()
-//    {
-//      // Delete the database
-//      using (var context = CreateDataContext())
-//      {
-//        DetachAllEntities(context);
-//        context.Database.EnsureDeleted();
-//      }
-//
-//      dbConnection.Close();
-//      //      using (var db = CreateDataContext()  )
-//      //      {
-//      //        db.Database.EnsureDeleted();
-//      //      }
-//    }
-
     [TearDown]
     public void TearDown()
     {
-      using (var db = CreateDataContext())
-      {
-        using (var s = scope)
-        {
-        }
-      }
-
-      // Delete the database
-      //      using (var db = CreateDataContext())
-      //      {
-      //        db.Database.EnsureDeleted();
-      //      }
-
-      //      serviceProvider.Dispose();
-      serviceProvider = null;
-    }
-
-    [Test]
-    public void SimpleTest()
-    {
-      var context = CreateDataContext();
-      var symbols = context.Symbols;
+      dbConnection.Close();
     }
 
     [Test]
     public async Task ScrapeTest_ToEmptyDb_Success()
     {
-//      var symbols = CreateDataContext().Symbols.ToList();
-//      CreateDataContext().SaveChanges();
+      // Clear database
+      db.Database.EnsureDeleted();
+      db.Database.EnsureCreated();
+
       // Act
-      await scraper.Scrape(new[] {Msft});
+      await scraper.Scrape(new[] {symbolId});
 
       // Assert
       AssertAllRecordsPresent();
@@ -202,32 +119,19 @@ namespace AlphaVantageScraper
     [Test]
     public async Task ScrapeTest_ToPopulatedDb_Success()
     {
-      // Insert a record in the database.
-      var db = CreateDataContext();
+      // Clear database
       db.Database.EnsureDeleted();
-      //using (var db = CreateDataContext())
-      //{
-//        DetachAllEntities(db);
+      db.Database.EnsureCreated();
+
+      // Insert a record in the database.
       var existingDailyQuote = DailyQuotes[1];
-      var existingSymbol = new Symbol
-      {
-        Id = Msft,
-//        DailyQuotes = new List<DailyQuote> {existingDailyQuote}
-      };
-//      existingSymbol.DailyQuotes.Add(existingDailyQuote);
-//      db.Symbols.Add(existingSymbol);
+      db.Symbols.Add(symbol);
       db.DailyQuotes.Add(existingDailyQuote);
       db.SaveChanges();
 
-//      var msft = db.Symbols.FirstOrDefault(s => s.Id == Msft);
-//      msft?.DailyQuotes?.Add(existingDailyQuote);
-////      db.DailyQuotes.Add(existingDailyQuote);
-//      db.SaveChanges();
-      //}
-//      var symbols = db.Symbols;
-
       // Act
-      await scraper.Scrape(new[] {Msft});
+      await scraper.Scrape(new[] {symbolId});
+//      await scraper.Scrape(new[] {Msft});
 
       // Assert
       AssertAllRecordsPresent();
@@ -236,36 +140,26 @@ namespace AlphaVantageScraper
     [Test]
     public async Task ScrapeTest_ToFullDb_Success()
     {
-      // Insert all records in the database.
-//      using (var db = CreateDataContext())
-      var db = CreateDataContext();
-//      {
-      db.Symbols.Add(symbol);
-      db.SaveChanges();
-//      }
+      // Clear database
+      db.Database.EnsureDeleted();
+      db.Database.EnsureCreated();
 
-//      var symbols = db.Symbols.ToList();
+      db.Symbols.Add(symbol);
+      db.DailyQuotes.AddRange(DailyQuotes);
+      db.SaveChanges();
 
       // Act
-      await scraper.Scrape(new[] {Msft});
+      await scraper.Scrape(new[] {symbolId});
 
       // Assert
       AssertAllRecordsPresent();
     }
 
-    private StockWatchDataContext CreateDataContext()
-    {
-      //      return new StockWatchDataContext(dbOptions);
-      var context = serviceProvider.GetRequiredService<StockWatchDataContext>();
-//      context.Database.EnsureDeleted();
-      return context;
-//      return scope.ServiceProvider.GetRequiredService<StockWatchDataContext>();
-    }
-
-    private static TimeseriesDailyResponse CreateDailyResponse()
+    private TimeseriesDailyResponse CreateDailyResponse()
     {
       var metadata =
-        new Dictionary<string, string> {{"2. Symbol", "MSFT"}}.ToImmutableDictionary();
+        new Dictionary<string, string> {{"2. Symbol", symbolId.ToUpperInvariant()}}
+          .ToImmutableDictionary();
 
       var timeseries = new List<Tick>
       {
@@ -273,59 +167,18 @@ namespace AlphaVantageScraper
         new Tick(DateTime.Parse("2018-04-25"), 93.30m, 92.31m, 93.30m, 90.28m, 33729257)
       }.ToImmutableList();
 
-      return
-        new TimeseriesDailyResponse(Msft, metadata, timeseries);
+      return new TimeseriesDailyResponse(symbolId, metadata, timeseries);
     }
 
     private void AssertAllRecordsPresent()
     {
       // Check that the database contains the objects.
-      var db = CreateDataContext();
-//      using (var db = CreateDataContext())
-//      {
       var symbols = db.Symbols.Include(s => s.DailyQuotes).ToList();
       CollectionAssert.AreEqual(new[] {symbol}, symbols);
 
       var actualDailyQuotes = symbols[0].DailyQuotes.ToList();
       actualDailyQuotes.Sort((q1, q2) => String.CompareOrdinal(q2.Day, q1.Day));
-//      CollectionAssert.AreEquivalent(DailyQuotes, actualDailyQuotes);
-//      }
+      CollectionAssert.AreEquivalent(DailyQuotes, actualDailyQuotes);
     }
-
-//    private class FakeDataContextFactory : IStockWatchDataContextFactory
-//    {
-//      public StockWatchDataContext DataContext => throw new NotImplementedException();
-//
-//      public FakeDataContextFactory()
-//      {
-//        var dailyQuotes = new Mock<DbSet<DailyQuote>>();
-//        var groups = new Mock<DbSet<Group>>();
-//        var symbolGroupMemberships = new Mock<DbSet<SymbolGroupMembership>>();
-//        var symbols = new Mock<DbSet<Symbol>>();
-//
-//        var mockContext = new Mock<StockWatchDataContext>();
-//        mockContext.Setup(m => m.DailyQuotes).Returns(dailyQuotes.Object);
-//        mockContext.Setup(m => m.Groups).Returns(groups.Object);
-//        mockContext.Setup(m => m.SymbolGroupMemberships).Returns(symbolGroupMemberships.Object);
-//        mockContext.Setup(m => m.Symbols).Returns(symbols.Object);
-//
-//        var service = new BlogService(mockContext.Object);
-//        service.AddBlog("ADO.NET Blog", "http://blogs.msdn.com/adonet");
-//      }
-//    }
-
-    //    public void DetachAllEntities(DbContext db)
-    //    {
-    //      var ent = db.ChangeTracker.Entries().ToList();
-    //      var changedEntriesCopy = db.ChangeTracker.Entries()
-    //        .Where(e => e.State == EntityState.Added ||
-    //                    e.State == EntityState.Modified ||
-    //                    e.State == EntityState.Deleted)
-    //        .ToList();
-    //      foreach (var entity in changedEntriesCopy)
-    //      {
-    //        db.Entry(entity.Entity).State = EntityState.Detached;
-    //      }
-    //    }
   }
 }

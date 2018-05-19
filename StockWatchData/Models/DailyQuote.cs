@@ -70,5 +70,29 @@ namespace StockWatchData.Models
         $"{nameof(Volume)}: {Volume}, {nameof(CloseChangePercent)}: {CloseChangePercent}%, " +
         $"{nameof(CollectionFunction)}: {CollectionFunction}";
     }
+
+    public DailyQuote Clone()
+    {
+      return new DailyQuote
+      {
+        Symbol = Symbol,
+        Day = Day,
+        Date = Date,
+        Open = Open,
+        Close = Close,
+        High = High,
+        Low = Low,
+        Volume = Volume,
+        OpenChangePercent = OpenChangePercent,
+        CloseChangePercent = CloseChangePercent,
+        HighChangePercent = HighChangePercent,
+        LowChangePercent = LowChangePercent,
+        VolumeChangePercent = VolumeChangePercent,
+        CollectionFunction = CollectionFunction,
+        CreatedAt = CreatedAt,
+        UpdatedAt = UpdatedAt,
+        SymbolNavigation = SymbolNavigation
+      };
+    }
   }
 }
