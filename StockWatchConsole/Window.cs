@@ -4,23 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Common;
+using DatabaseWindow = StockWatchData.Models.Window;
 
 namespace StockWatchConsole
 {
   public class Window
   {
     private static readonly decimal[] Limits =
-    {
-      -0.50m,
-      -0.20m,
-      -0.10m,
-      -0.05m,
-      0.00m,
-      0.05m,
-      0.10m,
-      0.20m,
-      0.50m
-    };
+      {-0.50m, -0.20m, -0.10m, -0.05m, 0.00m, 0.05m, 0.10m, 0.20m, 0.50m};
 
     public static readonly Dictionary<int, string> BucketLabels = new Dictionary<int, string>
     {
@@ -64,6 +55,39 @@ namespace StockWatchConsole
       }
 
       return Limits.Length;
+    }
+
+    public DatabaseWindow ToDatabaseWindow()
+    {
+      return new DatabaseWindow
+      {
+        Symbol = Symbol,
+        DayOne = DayOne,
+        PastSize = (short) PastSize,
+        FutureSize = (short) FutureSize,
+        UnpackedContent = new DatabaseWindow.WindowContent
+        {
+          PastDays = PastDays,
+          PastValues = PastValues,
+          FutureDays = FutureDays,
+          FutureValues = FutureValues
+        }
+      };
+    }
+
+    public static Window FromDatabaseWindow(DatabaseWindow window)
+    {
+      return new Window
+      {
+        Symbol = window.Symbol,
+        DayOne = window.DayOne,
+        PastSize = window.PastSize,
+        FutureSize = window.FutureSize,
+        PastDays = window.UnpackedContent.PastDays,
+        PastValues = window.UnpackedContent.PastValues,
+        FutureDays = window.UnpackedContent.FutureDays,
+        FutureValues = window.UnpackedContent.FutureValues
+      };
     }
   }
 }

@@ -22,17 +22,35 @@ namespace AlphaVantageScraper
       DataContextFactory = dataContextFactory;
     }
 
-    private async Task UpdateDatabase(TimeseriesDailyResponse response)
+    private async Task UpdateDatabase(TimeseriesDailyResponse response, string group = null)
     {
       var db = DataContextFactory.DataContext;
-      var symbolObj = await db.Symbols.FindAsync(response.Symbol);
+      var symbol = response.Symbol;
+      var symbolObj = await db.Symbols.FindAsync(symbol);
       if (symbolObj == null)
       {
-        db.Symbols.Add(new Symbol {Id = response.Symbol});
+        db.Symbols.Add(symbolObj = new Symbol {Id = symbol});
+      }
+
+      if (group != null)
+      {
+        var groupObj = await db.Groups.FindAsync(group);
+        if (groupObj == null)
+        {
+          db.Groups.Add(new Group {Id = group});
+        }
+
+        var groupMembership = await db.SymbolGroupMemberships.FindAsync(symbol, group);
+        if (groupMembership == null)
+        {
+          db.SymbolGroupMemberships.Add(new SymbolGroupMembership {Symbol = symbol, Group = group});
+        }
+
+        symbolObj.AddTag(group);
       }
 
       var latestDay = await (from quote in db.DailyQuotes
-        where quote.Symbol == response.Symbol
+        where quote.Symbol == symbol
         select quote.Day).MaxAsync();
       DateTime latestDate = string.IsNullOrEmpty(latestDay)
         ? DateTime.MinValue
@@ -42,7 +60,7 @@ namespace AlphaVantageScraper
         where tick.Time >= latestDate
         select new DailyQuote
         {
-          Symbol = response.Symbol,
+          Symbol = symbol,
           Day = tick.Time.ToString("yyyy-MM-dd"),
           Date = tick.Time,
           Open = tick.Open,
@@ -80,11 +98,12 @@ namespace AlphaVantageScraper
       await db.SaveChangesAsync();
     }
 
-    public async Task Scrape(IEnumerable<string> symbols)
+    public async Task Scrape(IEnumerable<string> symbols, string group = null)
     {
-      foreach (var symbol in symbols)
+      var db = DataContextFactory.DataContext;
+      var symbolList = symbols.ToList();
+      foreach (var symbol in symbolList)
       {
-        var db = DataContextFactory.DataContext;
         var symbolObj = await db.Symbols.FindAsync(symbol);
         if (symbolObj != null)
         {
@@ -93,8 +112,13 @@ namespace AlphaVantageScraper
 
         var response = await AlphaVantageApi.TimeseriesDaily(symbol, OutputSizes.Full);
         var oneSecond = Task.Delay(1000);
-        await UpdateDatabase(response);
+        await UpdateDatabase(response, group);
         await oneSecond;
+      }
+
+      if (group != null)
+      {
+        await db.AddSymbolsToGroup(symbolList, group);
       }
     }
   }

@@ -17,15 +17,19 @@ namespace StockWatchConsole
 
       //      watcher.StartStub();
 
-//      Console.WriteLine(TFCore.Version);
-//      //      Console.WriteLine(TFCore.);
-//      var session = new TFSession();
-//      session.
-
-      WindowExtractor extractor = new WindowExtractor(new SqlServerStockWatchDataContextFactory());
+      //      Console.WriteLine(TFCore.Version);
+      //      //      Console.WriteLine(TFCore.);
+      //      var session = new TFSession();
+      //      session.
+      var dbFactory = new SqlServerStockWatchDataContextFactory();
+      WindowExtractor extractor = new WindowExtractor(dbFactory);
+      var db = dbFactory.DataContext;
 //      var windows = extractor.ExtractAllWindows(20, 50);
-      var symbol = "amzn";
-      var windows = extractor.ExtractAllWindows(new[] {symbol}, 20, 50);
+      var nasdaq = db.Symbols.Where(s => s.Tags.Contains("{nasdaq}")).Select(s => s.Id).ToList();
+//      var symbol = "amzn";
+      var symbol = "nasdaq";
+//      var windows = extractor.ExtractAllWindows(new[] {symbol}, 20, 50);
+      var windows = extractor.ExtractAllWindows(nasdaq, 20, 50);
 
       Console.WriteLine($"{windows.Count} windows:\n");
 //      windows.Sort((w1, w2) => w1.Bucket - w2.Bucket);

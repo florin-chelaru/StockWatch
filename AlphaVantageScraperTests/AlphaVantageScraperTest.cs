@@ -21,9 +21,12 @@ namespace AlphaVantageScraper
   {
     #region Fields
 
+    private const string Msft = "msft";
+    private const string Group = "mygroup";
     private static readonly ImmutableList<DailyQuote> DailyQuotes = ImmutableList.Create(
       new DailyQuote
       {
+        Symbol = Msft,
         Day = "2018-04-26",
         Date = DateTime.Parse("2018-04-26"),
         Open = 93.55m,
@@ -40,6 +43,7 @@ namespace AlphaVantageScraper
       },
       new DailyQuote
       {
+        Symbol = Msft,
         Day = "2018-04-25",
         Date = DateTime.Parse("2018-04-25"),
         Open = 93.30m,
@@ -58,23 +62,18 @@ namespace AlphaVantageScraper
     #endregion
 
     private DbConnection dbConnection;
-    
+
     private Mock<IAlphaVantage> alphaVantageApi;
     private Mock<IStockWatchDataContextFactory> dataContextFactory;
     private StockWatchDataContext db;
 
     private AlphaVantageScraper scraper;
 
-    private string symbolId;
-    private Symbol symbol;
+    private static readonly Symbol Symbol = new Symbol { Id = Msft, DailyQuotes = DailyQuotes, Tags = $"{{{Group}}}" };
 
     [SetUp]
     public void SetUp()
     {
-      symbolId = Guid.NewGuid().ToString();
-      DailyQuotes.ForEach(q => q.Symbol = symbolId);
-      symbol = new Symbol {Id = symbolId, DailyQuotes = DailyQuotes};
-
       dbConnection = new SqliteConnection("DataSource=:memory:");
       dbConnection.Open();
       var dbOptions = new DbContextOptionsBuilder<StockWatchDataContext>()
@@ -87,7 +86,7 @@ namespace AlphaVantageScraper
       db.Database.EnsureCreated();
 
       alphaVantageApi = new Mock<IAlphaVantage>();
-      alphaVantageApi.Setup(api => api.TimeseriesDaily(symbolId, OutputSizes.Full))
+      alphaVantageApi.Setup(api => api.TimeseriesDaily(Msft, OutputSizes.Full))
         .Returns(Task.FromResult(CreateDailyResponse()));
 
       dataContextFactory = new Mock<IStockWatchDataContextFactory>();
@@ -110,7 +109,7 @@ namespace AlphaVantageScraper
       db.Database.EnsureCreated();
 
       // Act
-      await scraper.Scrape(new[] {symbolId});
+      await scraper.Scrape(new[] {Msft}, Group);
 
       // Assert
       AssertAllRecordsPresent();
@@ -125,13 +124,12 @@ namespace AlphaVantageScraper
 
       // Insert a record in the database.
       var existingDailyQuote = DailyQuotes[1];
-      db.Symbols.Add(symbol);
+      db.Symbols.Add(new Symbol {Id = Msft});
       db.DailyQuotes.Add(existingDailyQuote);
       db.SaveChanges();
 
       // Act
-      await scraper.Scrape(new[] {symbolId});
-//      await scraper.Scrape(new[] {Msft});
+      await scraper.Scrape(new[] {Msft}, Group);
 
       // Assert
       AssertAllRecordsPresent();
@@ -144,12 +142,12 @@ namespace AlphaVantageScraper
       db.Database.EnsureDeleted();
       db.Database.EnsureCreated();
 
-      db.Symbols.Add(symbol);
+      db.Symbols.Add(new Symbol {Id = Msft});
       db.DailyQuotes.AddRange(DailyQuotes);
       db.SaveChanges();
 
       // Act
-      await scraper.Scrape(new[] {symbolId});
+      await scraper.Scrape(new[] {Msft}, Group);
 
       // Assert
       AssertAllRecordsPresent();
@@ -158,7 +156,7 @@ namespace AlphaVantageScraper
     private TimeseriesDailyResponse CreateDailyResponse()
     {
       var metadata =
-        new Dictionary<string, string> {{"2. Symbol", symbolId.ToUpperInvariant()}}
+        new Dictionary<string, string> {{"2. Symbol", Msft.ToUpperInvariant()}}
           .ToImmutableDictionary();
 
       var timeseries = new List<Tick>
@@ -167,18 +165,22 @@ namespace AlphaVantageScraper
         new Tick(DateTime.Parse("2018-04-25"), 93.30m, 92.31m, 93.30m, 90.28m, 33729257)
       }.ToImmutableList();
 
-      return new TimeseriesDailyResponse(symbolId, metadata, timeseries);
+      return new TimeseriesDailyResponse(Msft, metadata, timeseries);
     }
 
     private void AssertAllRecordsPresent()
     {
       // Check that the database contains the objects.
-      var symbols = db.Symbols.Include(s => s.DailyQuotes).ToList();
-      CollectionAssert.AreEqual(new[] {symbol}, symbols);
+      var symbols = db.Symbols.Include(s => s.DailyQuotes).Include(s => s.SymbolGroupMemberships)
+        .ToList();
+      CollectionAssert.AreEqual(new[] {Symbol}, symbols);
 
       var actualDailyQuotes = symbols[0].DailyQuotes.ToList();
       actualDailyQuotes.Sort((q1, q2) => String.CompareOrdinal(q2.Day, q1.Day));
       CollectionAssert.AreEquivalent(DailyQuotes, actualDailyQuotes);
+
+      var actualGroups = symbols[0].Groups.Select(g => g.Id).ToArray();
+      CollectionAssert.AreEqual(new[] {Group}, actualGroups);
     }
   }
 }

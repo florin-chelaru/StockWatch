@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data.Entity.ModelConfiguration.Configuration;
 using System.Linq;
 using System.Runtime.Remoting;
@@ -13,6 +15,7 @@ namespace StockWatchData.Models
     public virtual DbSet<Group> Groups { get; set; }
     public virtual DbSet<SymbolGroupMembership> SymbolGroupMemberships { get; set; }
     public virtual DbSet<Symbol> Symbols { get; set; }
+    public virtual DbSet<Window> Windows { get; set; }
 
     public StockWatchDataContext()
     {
@@ -105,9 +108,50 @@ namespace StockWatchData.Models
 
         entity.Property(e => e.Market).HasMaxLength(50);
       });
+
+      modelBuilder.Entity<Window>(entity =>
+      {
+        entity.HasKey(e => new { e.Symbol, e.DayOne, e.PastSize, e.FutureSize });
+
+        entity.Property(e => e.Symbol).HasMaxLength(50);
+
+        entity.Property(e => e.DayOne).HasMaxLength(50);
+
+        entity.Property(e => e.Content).IsRequired();
+
+        entity.HasOne(d => d.SymbolNavigation)
+          .WithMany(p => p.Windows)
+          .HasForeignKey(d => d.Symbol)
+          .OnDelete(DeleteBehavior.ClientSetNull)
+          .HasConstraintName("FK_Windows_Symbols");
+      });
     }
 
-    public async Task<TEntity> RemoveIfExistsAsync<TEntity>(params object[] keyValues)
+    public async Task AddSymbolsToGroup(IEnumerable<string> symbols, string group)
+    {
+      var symbolSet = symbols.ToImmutableHashSet();
+      var tag = $"{{{group}}}";
+      var symbolObjs =
+        await (from s in Symbols.Include(s => s.SymbolGroupMemberships)
+          let symbol = s.Id
+          where symbolSet.Contains(symbol) && (s.Tags == null || !s.Tags.Contains(tag))
+          select s).ToListAsync();
+      var groupObj = await Groups.FindAsync(group);
+      if (groupObj == null)
+      {
+        Groups.Add(new Group {Id = group});
+      }
+
+      foreach (var symbolObj in symbolObjs)
+      {
+        symbolObj.SymbolGroupMemberships.Add(
+          new SymbolGroupMembership {Symbol = symbolObj.Id, Group = group});
+        symbolObj.AddTag(group);
+      }
+    }
+
+    [Obsolete]
+    private async Task<TEntity> RemoveIfExistsAsync<TEntity>(params object[] keyValues)
       where TEntity : class
     {
       var entity = await FindAsync<TEntity>(keyValues);
@@ -120,12 +164,14 @@ namespace StockWatchData.Models
       return entity;
     }
 
-    public TEntity RemoveIfExists<TEntity>(params object[] key) where TEntity : class
+    [Obsolete]
+    private TEntity RemoveIfExists<TEntity>(params object[] key) where TEntity : class
     {
       return RemoveIfExistsAsync<TEntity>(key).Result;
     }
 
-    public void RemoveRangeIfExists<TEntity>(ICollection<object[]> keys) where TEntity : class
+    [Obsolete]
+    private void RemoveRangeIfExists<TEntity>(ICollection<object[]> keys) where TEntity : class
     {
       foreach (var key in keys)
       {
@@ -133,7 +179,8 @@ namespace StockWatchData.Models
       }
     }
 
-    public void RemoveRangeIfExists(ICollection<DailyQuote> quotes)
+    [Obsolete]
+    private void RemoveRangeIfExists(ICollection<DailyQuote> quotes)
     {
       var keys = (from quote in quotes select new object[] {quote.Symbol, quote.Day}).ToList();
       RemoveRangeIfExists<DailyQuote>(keys);
