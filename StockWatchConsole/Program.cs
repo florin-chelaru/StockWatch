@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using StockWatchData.Models;
+using TensorFlow;
 
 namespace StockWatchConsole
 {
@@ -14,73 +17,43 @@ namespace StockWatchConsole
 
       //      watcher.StartStub();
 
-      // Do some testing
+//      Console.WriteLine(TFCore.Version);
+//      //      Console.WriteLine(TFCore.);
+//      var session = new TFSession();
+//      session.
 
-      //      Thread.Sleep(1000 * 60 * 60 * 4);
+      WindowExtractor extractor = new WindowExtractor(new SqlServerStockWatchDataContextFactory());
+//      var windows = extractor.ExtractAllWindows(20, 50);
+      var symbol = "amzn";
+      var windows = extractor.ExtractAllWindows(new[] {symbol}, 20, 50);
 
-      //      watcher.StopStub();
-      //      StockWatch.Data.Bla x;
-      //      StockWatchData.Entities entities;
-      //      entities.
-//      StockWatchDb db;
-      using (var db = new StockWatchDataContext())
+      Console.WriteLine($"{windows.Count} windows:\n");
+//      windows.Sort((w1, w2) => w1.Bucket - w2.Bucket);
+//      foreach (var window in windows)
+//      {
+//        var pastValues = string.Join(",", window.PastValues.Select(v => $"{decimal.Round(v * 100m, 3)}%"));
+//        Console.WriteLine($"{window.Symbol},{window.DayOne},{window.BucketLabel},{pastValues}");
+//      }
+
+      Console.WriteLine($"{symbol}");
+      foreach (var bucket in Window.BucketLabels)
       {
-//        db.StockQuoteIntervals.Add(new StockQuoteInterval
-//        {
-//          Symbol = "testsymbol",
-//          CollectionFunction = CollectionFunction.Test,
-//          Open = 10.0m,
-//          Close = 20.0m,
-//          High = 25.0m,
-//          Low = 5.0m,
-//          Volume = 100L,
-//          StartTime = DateTime.Parse("2018-04-28 9:00:00"),
-//          EndTime = DateTime.Parse("2018-04-28 16:00:00")
-//        });
-//        db.SaveChanges();
-//      
-        var nasdaq = (from g in db.Groups where g.Id == "nasdaq" select g).FirstOrDefault() ??
-                     db.Groups.Add(new Group {Id = "nasdaq"}).Entity;
+        var c = windows.Count(w => w.MaxBucket == bucket.Key);
+        Console.WriteLine($"{decimal.Round((decimal) c / windows.Count * 100m, 3)}%");
+      }
 
-        var msft =
-          (from symbol in db.Symbols.Include(symbol => symbol.DailyQuotes)
-            where symbol.Id == "msft"
-            select symbol).FirstOrDefault() ?? db.Symbols.Add(new Symbol {Id = "msft"}).Entity;
+      Console.WriteLine($"\n{symbol}");
+      foreach (var bucket in Window.BucketLabels)
+      {
+        var c = windows.Count(w => w.MinBucket == bucket.Key);
+        Console.WriteLine($"{decimal.Round((decimal) c / windows.Count * 100m, 3)}%");
+      }
 
-        var membership =
-          (from m in db.SymbolGroupMemberships
-            where m.Symbol == msft.Id && m.Group == nasdaq.Id
-            select m).FirstOrDefault() ??
-          db.SymbolGroupMemberships
-            .Add(new SymbolGroupMembership {Symbol = msft.Id, Group = nasdaq.Id}).Entity;
-
-        var myQuote = (from quote in msft.DailyQuotes
-                        where quote.Day == "2018-05-04"
-                        select quote)
-                      .FirstOrDefault() ??
-                      db.DailyQuotes.Add(new DailyQuote
-                      {
-                        Symbol = msft.Id,
-                        Day = "2018-05-04",
-                        Open = 10.0m,
-                        Close = 20.0m,
-                        High = 25.55m,
-                        Low = 5.23m,
-                        Volume = 100L,
-                        OpenChangePercent = 1.23m,
-                        CloseChangePercent = 2.43m,
-                        HighChangePercent = 4.21m,
-                        LowChangePercent = -1.33m,
-                        VolumeChangePercent = -8.75m,
-                        CollectionFunction = "Test",
-                        CreatedAt = DateTimeOffset.UtcNow,
-                        UpdatedAt = DateTimeOffset.UtcNow
-                      }).Entity;
-        db.SaveChanges();
-
-
-        Console.WriteLine(myQuote);
-        Console.WriteLine(myQuote.Date);
+      Console.WriteLine($"\n{symbol}");
+      foreach (var bucket in Window.BucketLabels)
+      {
+        var c = windows.Count(w => w.MedianBucket == bucket.Key);
+        Console.WriteLine($"{decimal.Round((decimal) c / windows.Count * 100m, 3)}%");
       }
     }
   }
